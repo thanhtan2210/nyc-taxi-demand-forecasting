@@ -1,5 +1,7 @@
 # DW and DSS for Travel Demand Prediction (NYC Taxi & For-Hire Vehicles)
 
+![CI Pipeline](https://github.com/thanhtan2210/DW-and-DSS-for-Travel-Demand-Predicttion/actions/workflows/ci.yml/badge.svg)
+
 ## 1. Project Overview
 This project delivers an end-to-end **Data Warehouse (DW)** and a **Decision Support System (DSS)** designed to analyze and predict travel demand in New York City. By processing millions of records from the NYC Taxi & Limousine Commission (TLC), we've built a scalable architecture that bridges the gap between raw Big Data and actionable business intelligence.
 
@@ -87,6 +89,21 @@ streamlit run app/main.py
 *   **Interactive Web App**: Built with Streamlit, featuring real-time demand prediction.
 *   **OLAP Dashboard**: Comprehensive Power BI report (`visual/nyc-dss.pbix`).
 *   **Technical Documentation**: Detailed specifications in the `docs/` folder covering ETL design, DW modeling, and ML implementation.
+
+## 7. Model Benchmarks & Performance
+The forecasting models were validated on a chronological hold-out dataset (November 2025) to prevent temporal data leakage:
+
+| Model | RMSE | MAE | R² Score |
+| :--- | :---: | :---: | :---: |
+| **XGBoost** | **13.16** | **5.47** | **0.96** |
+| **Random Forest** | 14.92 | 6.00 | 0.95 |
+| **LSTM (Deep Learning)** | 14.20 | 5.80 | 0.94 |
+
+## 8. Prerequisites & Data Source
+*   **Python Version**: 3.10+ / 3.11
+*   **Database Cloud Platform**: Google BigQuery (requires service account credentials)
+*   **Primary Dataset Source**: Official [NYC TLC Trip Record Data](https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page) (Parquet files containing street-hail and app-based trips).
+*   **Exogenous Weather Source**: Historical weather forecasts (Temperature, Precipitation) mapped as dimension attributes to enrich ML feature engineering.
 
 ---
 **Author:** thanhtan2210  

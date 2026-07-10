@@ -85,6 +85,16 @@ def run_local_polars_etl(cat, load_raw, load_clean):
             lf_std = polars_engine.standardize_columns(lf_raw)
             lf_cleaned = polars_engine.apply_cleaning_logic(lf_std, cat)
             
+            # Schema Validation using Pandera (validates a sample to be memory-safe)
+            try:
+                from .validators.schemas import CleanTripSchema
+                sample_df = lf_cleaned.slice(0, 1000).collect().to_pandas()
+                if len(sample_df) > 0:
+                    CleanTripSchema.validate(sample_df)
+                    print(f"    [PANDERA] Clean schema validated successfully for {file_name}.")
+            except Exception as ve:
+                print(f"    [PANDERA] WARNING: Schema validation failed for {file_name}: {ve}")
+
             # 3. Load (Streaming Sink to Disk)
             saved_path = sink_data(lf_cleaned, output_dir, file_name)
             

@@ -92,7 +92,7 @@ def load_dim_service_type_to_bq():
 
 def load_dim_weather_to_bq():
     """Synchronizes Dim_Weather from CSV or initializes a validated schema."""
-    client = bigquery.Client() # Assuming bigquery is imported as bq or bigquery
+    client = get_bq_client()
     project_id = os.getenv("BQ_PROJECT_ID")
     dataset_id = os.getenv("BQ_DATASET_ID", "nyc_taxi_dw")
     table_id = f"{project_id}.{dataset_id}.Dim_Weather"
