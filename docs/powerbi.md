@@ -3,7 +3,7 @@
 Power BI reads the same committed files as the Streamlit app. No database or gateway is needed.
 
 | File | Grain | Columns |
-|---|---|---|
+| --- | --- | --- |
 | `data/mart/demand_hourly/month=YYYY-MM/part.parquet` | one row per zone and hour (zones 1-263, hours without trips are 0) | `hour`, `zone_id`, `borough`, `trips_total`, `trips_yellow`, `trips_green`, `trips_fhv`, `trips_fhvhv` |
 | `data/mart/dim_zone.csv` | one row per taxi zone | `zone_id`, `borough`, `zone`, `service_zone` |
 
@@ -45,7 +45,7 @@ ADDCOLUMNS (
 Mark it as a date table on `Date`, then create two single-direction, many-to-one relationships in the model view:
 
 | From (many) | To (one) |
-|---|---|
+| --- | --- |
 | `demand[zone_id]` | `dim_zone[zone_id]` |
 | `demand[date]` | `dim_date[Date]` |
 
@@ -78,7 +78,7 @@ Format `Service Share` and `MoM Change` as percentages.
 ## 5. Suggested one-page layout
 
 | Area | Visual | Fields |
-|---|---|---|
+| --- | --- | --- |
 | Top row | 3 cards | `Total Trips`, `Avg Trips per Zone-Hour`, `MoM Change` (filtered to the last month) |
 | Left, wide | Stacked area chart | Axis `dim_date[Date]`, values `Total Trips`, legend `demand[service]` |
 | Right | Bar chart | Axis `demand[service]`, values `Service Share` |
