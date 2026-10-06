@@ -107,7 +107,7 @@ Tests: `pytest -q` (no network needed).
 
 - **The mart is not the full TLC volume.** The source files hold 376,425,148 trips; 350,804,859 of them (93.2%) could be placed on a taxi zone and are in the mart. Of the 25,620,289 trips left out, 25,472,687 are FHV trips without a pickup zone (from [`reports/data_quality.json`](reports/data_quality.json)).
 - **FHV is mostly missing.** Between 80% and 92% of FHV trips per month have no pickup zone in the source files and cannot be counted, so the "all services" total under-counts this service.
-- **Possible double counting was checked on one day only.** Since June 2026 the yellow files carry an undocumented `request_source` column with values such as `HV0003` (Uber's licence number in the HVFHS data dictionary). On Wednesday 2026-06-10, 7.8% of those yellow trips (2,029 of 26,113) matched an Uber trip in the fhvhv file on zones and times, against 9.6% (10,383 of 108,722) of yellow trips without a `request_source` ([`reports/double_count_check.json`](reports/double_count_check.json)). That is no evidence of double counting, but it is one day and one matching rule, and TLC does not document the column.
+- **Possible double counting was checked on one day only.** Since June 2026 the yellow files carry an undocumented `request_source` column with values such as `HV0003` (Uber's licence number in the HVFHS data dictionary on the [TLC trip record page](https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page)). On Wednesday 2026-06-10, 7.8% of those yellow trips (2,029 of 26,113) matched an Uber trip in the fhvhv file on zones and times, against 9.6% (10,383 of 108,722) of yellow trips without a `request_source` ([`reports/double_count_check.json`](reports/double_count_check.json)). That is no evidence of double counting, but it is one day and one matching rule, and TLC does not document the column.
 - **The tree limit was reached.** The selected model stopped at 599 of at most 600 trees, so it was still improving. The limit was fixed before training and not raised afterwards, because the test months had already been used.
 - **Weather did not help and is not used.** Observed temperature and precipitation (a perfect "oracle" forecast) gave a validation MAE of 12.65 against 12.52 without them, so the final model has no weather features.
 - **Low-volume zones are poorly predicted in relative terms.** EWR (one zone, about 1.4 trips per hour) has a WAPE of 75% to 81% for XGBoost.
@@ -117,7 +117,7 @@ Tests: `pytest -q` (no network needed).
 - **The TLC CDN throttles clients.** After about 20 files in a row it answers HTTP 403 for a few minutes; the warehouse build waits and retries.
 - **No claim about the FIFA World Cup.** June and July 2026 overlap the tournament and are slightly harder to predict than May, but nothing here shows that the tournament is the cause.
 - **A WAPE near 10% is plausible, not a leak.** Zones average about 130 trips per hour, the lag features were recomputed independently in SQL, and removing the short-term lags raises validation WAPE from 9.4% to 11.3% ([`reports/leakage_check.json`](reports/leakage_check.json)).
-- **Old notebooks.** The files in `notebooks/` belong to an earlier version of this project (BigQuery, other models, other numbers) and are not part of the pipeline above. The full earlier version is on the branch `archive/before-cleanup`.
+- An earlier version of this project (BigQuery, LSTM, notebooks) is kept on the branch `archive/before-cleanup`.
 
 ## Authors
 

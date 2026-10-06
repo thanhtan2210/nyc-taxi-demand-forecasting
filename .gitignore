@@ -1,5 +1,4 @@
 # Raw trip records are never stored in the repo; only the hourly mart is committed
-dataset/Trip_Record/
 *.parquet
 !data/mart/**/*.parquet
 !reports/*.parquet
@@ -18,13 +17,6 @@ __pycache__/
 *.py[cod]
 *$py.class
 .pytest_cache/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-*/.ipynb_checkpoints/*
-
-# Legacy model directory of the old pipeline
-saved_models/
 
 # OS generated files
 desktop.ini
