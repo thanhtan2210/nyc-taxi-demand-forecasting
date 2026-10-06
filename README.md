@@ -101,7 +101,7 @@ python -m src.train                                # optional: metrics and model
 streamlit run app.py
 ```
 
-Tests: `pytest -q` (no network needed).
+Tests: `pip install -r requirements-dev.txt`, then `pytest -q` (no network needed).
 
 ## Limitations
 
@@ -111,7 +111,7 @@ Tests: `pytest -q` (no network needed).
 - **The tree limit was reached.** The selected model stopped at 599 of at most 600 trees, so it was still improving. The limit was fixed before training and not raised afterwards, because the test months had already been used.
 - **Weather did not help and is not used.** Observed temperature and precipitation (a perfect "oracle" forecast) gave a validation MAE of 12.65 against 12.52 without them, so the final model has no weather features.
 - **Low-volume zones are poorly predicted in relative terms.** EWR (one zone, about 1.4 trips per hour) has a WAPE of 75% to 81% for XGBoost.
-- **Two days are far below normal and are left in the data.** 2026-01-25 reached 45.1% and 2026-02-23 reached 24.3% of the median of the same weekday in the four weeks before and after ([`reports/unusual_days.csv`](reports/unusual_days.csv), from `python scripts/unusual_days.py`). All four services fall on both days. No cause is attributed, and both days are part of the training period.
+- **Two days are far below normal and are left in the data.** 2026-01-25 reached 45.1% and 2026-02-23 reached 24.3% of the median of the same weekday in the four weeks before and after ([`reports/unusual_days.csv`](reports/unusual_days.csv), from `python -m scripts.unusual_days`). All four services fall on both days. No cause is attributed, and both days are part of the training period.
 - **Daylight saving time.** Timestamps are New York wall-clock time: the hour 01:00 on 2025-11-02 holds two real hours and 02:00 on 2026-03-08 is almost empty. Both are left as they are.
 - **This is a backtest, not a live forecast.** The model predicts one hour ahead from the actual demand of the previous hours; the app replays stored predictions.
 - **The TLC CDN throttles clients.** After about 20 files in a row it answers HTTP 403 for a few minutes; the warehouse build waits and retries.

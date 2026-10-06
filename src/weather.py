@@ -8,16 +8,15 @@ timezone=America/New_York applies one fixed UTC offset to the whole response, wh
 every winter (EST) hour by one hour relative to the TLC pickup timestamps.
 """
 import sys
-from pathlib import Path
 
 import pandas as pd
 import requests
 
-from .config import ROOT, load_config, month_range
+from . import paths
+from .config import load_config, month_range
 from .timeutils import TIMEZONE, hours_of_months
 
 API_URL = "https://archive-api.open-meteo.com/v1/archive"
-DEFAULT_OUTPUT = ROOT / "data" / "external" / "weather_hourly.csv"
 VARIABLES = ["temperature_2m", "precipitation"]
 
 
@@ -70,9 +69,9 @@ def main():
     if missing:
         print(f"{missing} hours have no weather value; refusing to write a partial file")
         return 1
-    DEFAULT_OUTPUT.parent.mkdir(parents=True, exist_ok=True)
-    frame.to_csv(DEFAULT_OUTPUT, index=False, lineterminator="\n")
-    print(f"Wrote {len(frame):,} hours to {Path(DEFAULT_OUTPUT).relative_to(ROOT)}")
+    paths.WEATHER.parent.mkdir(parents=True, exist_ok=True)
+    frame.to_csv(paths.WEATHER, index=False, lineterminator="\n")
+    print(f"Wrote {len(frame):,} hours to {paths.WEATHER.relative_to(paths.ROOT)}")
     return 0
 
 

@@ -17,7 +17,7 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install -r requirements-dev.txt
 
       # Tests use synthetic fixtures and mocked responses; no network or secret is needed.
       - name: Run tests

@@ -36,7 +36,7 @@ jobs:
           --quality-path rebuilt/data_quality.json
 
       - name: Compare with the committed partition
-        run: python scripts/compare_partition.py --month "$MONTH" --rebuilt rebuilt/mart --out rebuilt/compare.json
+        run: python -m scripts.compare_partition --month "$MONTH" --rebuilt rebuilt/mart --out rebuilt/compare.json
 
       - name: Upload result
         if: always()

@@ -22,14 +22,10 @@ import numpy as np
 import pandas as pd
 import xgboost as xgb
 
-from .config import ROOT, load_config
+from . import paths
+from .config import load_config
 from .features import BASE_FEATURES, BASELINE, TARGET, WEATHER_FEATURES, build_features, load_mart
 from .timeutils import month_bounds
-
-DEFAULT_MART = ROOT / "data" / "mart" / "demand_hourly"
-DEFAULT_WEATHER = ROOT / "data" / "external" / "weather_hourly.csv"
-DEFAULT_MODELS = ROOT / "models"
-DEFAULT_REPORTS = ROOT / "reports"
 
 # At most six candidates, fixed before any model was fitted.
 PARAM_GRID = [
@@ -151,8 +147,8 @@ def scored_frame(part, predictions):
     })
 
 
-def run(cfg, mart_dir=DEFAULT_MART, weather_path=DEFAULT_WEATHER, models_dir=DEFAULT_MODELS,
-        reports_dir=DEFAULT_REPORTS, param_grid=PARAM_GRID, max_rounds=MAX_ROUNDS):
+def run(cfg, mart_dir=paths.DEMAND_MART, weather_path=paths.WEATHER, models_dir=paths.MODELS_DIR,
+        reports_dir=paths.REPORTS_DIR, param_grid=PARAM_GRID, max_rounds=MAX_ROUNDS):
     seed = int(cfg["random_state"])
     timings = {}
 

@@ -1,14 +1,11 @@
 """Loads config/pipeline.yaml and expands month ranges."""
-from pathlib import Path
-
 import pandas as pd
 import yaml
 
-ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_CONFIG = ROOT / "config" / "pipeline.yaml"
+from . import paths
 
 
-def load_config(path=DEFAULT_CONFIG):
+def load_config(path=paths.CONFIG):
     with open(path, encoding="utf-8") as fh:
         return yaml.safe_load(fh)
 

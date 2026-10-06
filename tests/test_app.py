@@ -3,13 +3,13 @@ import ast
 import base64
 import json
 from datetime import date
-from pathlib import Path
 
 import numpy as np
 
 from streamlit.testing.v1 import AppTest
 
-ROOT = Path(__file__).resolve().parent.parent
+from src.paths import ROOT
+
 TIMEOUT = 120
 
 
@@ -154,7 +154,7 @@ def test_app_does_not_import_the_warehouse_or_the_model():
     sources = [ROOT / "app.py", ROOT / "src" / "app_data.py", ROOT / "src" / "analytics.py",
                *(ROOT / "src" / "app_pages").glob("*.py")]
     assert len(sources) == 6
-    allowed_local = {"src", "src.app_data", "src.analytics"}
+    allowed_local = {"src", "src.app_data", "src.analytics", "src.config", "src.paths"}
     for source in sources:
         for node in ast.walk(ast.parse(source.read_text(encoding="utf-8"))):
             if isinstance(node, ast.Import):
@@ -162,7 +162,7 @@ def test_app_does_not_import_the_warehouse_or_the_model():
             elif isinstance(node, ast.ImportFrom):
                 modules = [node.module or ""]
                 if node.module == "src":
-                    assert {alias.name for alias in node.names} <= {"analytics", "app_data"}, source
+                    assert {alias.name for alias in node.names} <= {"analytics", "app_data", "paths"}, source
             else:
                 continue
             for module in modules:

@@ -1,11 +1,10 @@
 """Checks of the committed zone boundaries (no network, no pyshp or pyproj needed)."""
 import json
 import math
-from pathlib import Path
 
 import pytest
 
-GEOJSON = Path(__file__).resolve().parent.parent / "data" / "mart" / "taxi_zones.geojson"
+from src.paths import ZONE_SHAPES
 
 # Airport reference points published by the FAA, as listed on AirNav
 # (https://www.airnav.com/airport/KJFK and https://www.airnav.com/airport/KLGA, "Lat/Long").
@@ -17,7 +16,7 @@ AIRPORTS = {
 
 @pytest.fixture(scope="module")
 def features():
-    return json.loads(GEOJSON.read_text(encoding="utf-8"))["features"]
+    return json.loads(ZONE_SHAPES.read_text(encoding="utf-8"))["features"]
 
 
 def points_of(feature):

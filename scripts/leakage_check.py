@@ -1,7 +1,7 @@
 """Leakage checks for the demand model, run on the validation month only (test data is not touched).
 
 Usage:
-    python scripts/leakage_check.py
+    python -m scripts.leakage_check
 
 Writes reports/leakage_check.json with three independent checks:
   1. The lag features are recomputed with DuckDB window functions straight from the mart and
@@ -12,26 +12,23 @@ Writes reports/leakage_check.json with three independent checks:
 """
 import json
 import sys
-from pathlib import Path
 
 import duckdb
 import numpy as np
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT))
-
-from src.config import load_config  # noqa: E402
-from src.features import BASE_FEATURES, LAGS, TARGET, build_features, load_mart  # noqa: E402
-from src.train import DEFAULT_MART, MAX_ROUNDS, error_metrics, make_model, predict  # noqa: E402
+from src import paths
+from src.config import load_config
+from src.features import BASE_FEATURES, LAGS, TARGET, build_features, load_mart
+from src.train import MAX_ROUNDS, error_metrics, make_model, predict
 
 SHORT_TERM = ["lag_1", "lag_2", "lag_3", "roll_mean_24"]
 
 
 def main():
     cfg = load_config()
-    metrics = json.loads((ROOT / "models" / "metrics.json").read_text(encoding="utf-8"))
-    data = build_features(load_mart(DEFAULT_MART))
+    metrics = json.loads(paths.METRICS.read_text(encoding="utf-8"))
+    data = build_features(load_mart(paths.DEMAND_MART))
     split = cfg["split"]
     hour = data["hour"]
     train = data[(hour >= pd.Timestamp(split["train"]["start"])) & (hour <= pd.Timestamp(split["train"]["end"]))]
@@ -45,7 +42,7 @@ def main():
         SELECT hour, zone_id, {lag_sql},
                avg(trips_total) OVER (PARTITION BY zone_id ORDER BY hour
                                       ROWS BETWEEN 24 PRECEDING AND 1 PRECEDING) AS roll_mean_24
-        FROM read_parquet('{DEFAULT_MART.as_posix()}/*/part.parquet')
+        FROM read_parquet('{paths.DEMAND_MART.as_posix()}/*/part.parquet')
         QUALIFY hour >= TIMESTAMP '{split["validation"]["start"]}' AND hour <= TIMESTAMP '{split["validation"]["end"]}'
         ORDER BY zone_id, hour
     """).df()
@@ -68,7 +65,7 @@ def main():
     without_short_term = error_metrics(val[TARGET], predict(model, val, reduced))
 
     report = {
-        "generated_by": "python scripts/leakage_check.py",
+        "generated_by": "python -m scripts.leakage_check",
         "scope": "validation month only; the test months are not read by the model here",
         "lag_features_vs_sql_max_abs_diff": max_abs_diff,
         "validation": {
@@ -77,8 +74,7 @@ def main():
             "xgboost_without_short_term_features": {"features": reduced, **without_short_term},
         },
     }
-    out = ROOT / "reports" / "leakage_check.json"
-    out.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    paths.LEAKAGE_CHECK.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(report, indent=2))
     return 0
 

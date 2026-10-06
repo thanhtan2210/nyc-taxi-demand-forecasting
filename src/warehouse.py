@@ -19,19 +19,16 @@ from pathlib import Path
 import duckdb
 import pandas as pd
 
-from .config import DEFAULT_CONFIG, ROOT, load_config, month_range, parse_months
+from . import paths
+from .config import load_config, month_range, parse_months
 from .timeutils import hour_calendar, hours_of_months, month_bounds
 
-SQL_DIR = ROOT / "sql"
-DEFAULT_DB = ROOT / "warehouse" / "nyc_taxi.duckdb"
-DEFAULT_MART = ROOT / "data" / "mart" / "demand_hourly"
-DEFAULT_QUALITY = ROOT / "reports" / "data_quality.json"
 HTTP_ATTEMPTS = 4
 HTTP_RETRY_WAIT_SECONDS = 60
 
 
 def read_sql(name):
-    return (SQL_DIR / name).read_text(encoding="utf-8")
+    return (paths.SQL_DIR / name).read_text(encoding="utf-8")
 
 
 def connect(db_path, cfg):
@@ -152,7 +149,8 @@ def update_quality(quality_path, entries, cfg):
     quality_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
 
 
-def run(months, cfg, db_path=DEFAULT_DB, mart_dir=DEFAULT_MART, quality_path=DEFAULT_QUALITY, force=False):
+def run(months, cfg, db_path=paths.WAREHOUSE_DB, mart_dir=paths.DEMAND_MART, quality_path=paths.DATA_QUALITY,
+        force=False):
     """Builds the requested months and returns the list of months that were (re)built."""
     todo = [m for m in months if force or not (Path(mart_dir) / f"month={m}" / "part.parquet").exists()]
     for month in months:
@@ -186,10 +184,10 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--months", help="YYYY-MM or YYYY-MM:YYYY-MM (default: the range in the config)")
     ap.add_argument("--force", action="store_true", help="rebuild months whose mart partition already exists")
-    ap.add_argument("--config", default=str(DEFAULT_CONFIG))
-    ap.add_argument("--db", default=str(DEFAULT_DB), help="DuckDB file (not committed)")
-    ap.add_argument("--mart-dir", default=str(DEFAULT_MART))
-    ap.add_argument("--quality-path", default=str(DEFAULT_QUALITY))
+    ap.add_argument("--config", default=str(paths.CONFIG))
+    ap.add_argument("--db", default=str(paths.WAREHOUSE_DB), help="DuckDB file (not committed)")
+    ap.add_argument("--mart-dir", default=str(paths.DEMAND_MART))
+    ap.add_argument("--quality-path", default=str(paths.DATA_QUALITY))
     args = ap.parse_args(argv)
 
     cfg = load_config(args.config)

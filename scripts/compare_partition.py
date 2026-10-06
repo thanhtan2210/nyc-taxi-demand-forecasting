@@ -1,7 +1,7 @@
 """Compares a freshly rebuilt mart partition with the one committed in the repository.
 
 Usage:
-    python scripts/compare_partition.py --month 2026-07 --rebuilt rebuilt/mart --out rebuilt/compare.json
+    python -m scripts.compare_partition --month 2026-07 --rebuilt rebuilt/mart --out rebuilt/compare.json
 
 Exits with 1 when the row count or any trips total differs.
 """
@@ -12,8 +12,8 @@ from pathlib import Path
 
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parent.parent
-COMMITTED = ROOT / "data" / "mart" / "demand_hourly"
+from src import paths
+
 TRIP_COLUMNS = ["trips_total", "trips_yellow", "trips_green", "trips_fhv", "trips_fhvhv"]
 
 
@@ -30,7 +30,7 @@ def main():
     args = ap.parse_args()
 
     part = Path(f"month={args.month}") / "part.parquet"
-    committed = summarize(COMMITTED / part)
+    committed = summarize(paths.DEMAND_MART / part)
     rebuilt = summarize(Path(args.rebuilt) / part)
     result = {
         "month": args.month,

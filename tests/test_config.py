@@ -25,3 +25,25 @@ def test_split_is_chronological_and_does_not_overlap():
 def test_parse_months():
     assert parse_months("2025-11:2026-02") == ["2025-11", "2025-12", "2026-01", "2026-02"]
     assert parse_months("2026-07") == ["2026-07"]
+
+
+def test_every_configured_service_has_a_label_and_a_colour():
+    from src import analytics, app_data
+
+    services = list(load_config()["services"])
+    assert set(app_data.SERVICES) == set(services)
+    assert set(analytics.SERVICES) == set(services)
+    for service in services:
+        assert app_data.SERVICE_LABELS[service]
+        assert app_data.SERVICE_COLORS[service].startswith("#")
+
+
+def test_default_paths_point_inside_the_repository():
+    from src import paths
+
+    assert (paths.ROOT / "app.py").is_file()
+    for path in (paths.CONFIG, paths.DIM_ZONE, paths.ZONE_SHAPES, paths.WEATHER, paths.METRICS, paths.DATA_QUALITY,
+                 paths.BACKTEST, paths.BOROUGH_METRICS, paths.LEAKAGE_CHECK, paths.DOUBLE_COUNT_CHECK,
+                 paths.UNUSUAL_DAYS):
+        assert path.is_file(), path
+    assert paths.SQL_DIR.is_dir() and paths.DEMAND_MART.is_dir()

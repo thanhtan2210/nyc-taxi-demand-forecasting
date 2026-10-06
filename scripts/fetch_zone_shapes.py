@@ -2,7 +2,7 @@
 
 Usage (one-off; the result is committed, so the app and the tests never need these libraries):
     pip install -r requirements-geo.txt
-    python scripts/fetch_zone_shapes.py
+    python -m scripts.fetch_zone_shapes
 
 Source: https://d37ci6vzurychx.cloudfront.net/misc/taxi_zones.zip (NYC TLC, same CDN as the
 trip records). The shapefile is read with pyshp. Its coordinate system is taken from the .prj
@@ -26,15 +26,13 @@ import json
 import sys
 import urllib.request
 import zipfile
-from pathlib import Path
 
 import pyproj
 import shapefile
 
-ROOT = Path(__file__).resolve().parent.parent
+from src import paths
+
 SOURCE_URL = "https://d37ci6vzurychx.cloudfront.net/misc/taxi_zones.zip"
-DIM_ZONE = ROOT / "data" / "mart" / "dim_zone.csv"
-OUTPUT = ROOT / "data" / "mart" / "taxi_zones.geojson"
 DECIMALS = 5
 MAX_BYTES = 5 * 2**20
 
@@ -94,7 +92,7 @@ def main():
         dbf=io.BytesIO(read_zip_member(archive, ".dbf")),
         shx=io.BytesIO(read_zip_member(archive, ".shx")),
     )
-    with open(DIM_ZONE, encoding="utf-8", newline="") as fh:
+    with open(paths.DIM_ZONE, encoding="utf-8", newline="") as fh:
         dim_zone = {int(row["zone_id"]): row for row in csv.DictReader(fh)}
 
     polygons_by_zone, id_mismatches, name_mismatches = {}, [], []
@@ -138,8 +136,8 @@ def main():
     if size > MAX_BYTES:
         print(f"Refusing to write: larger than {MAX_BYTES / 2**20:.0f} MB")
         return 1
-    OUTPUT.write_text(text + "\n", encoding="utf-8", newline="\n")
-    print(f"Wrote {OUTPUT.relative_to(ROOT)}")
+    paths.ZONE_SHAPES.write_text(text + "\n", encoding="utf-8", newline="\n")
+    print(f"Wrote {paths.ZONE_SHAPES.relative_to(paths.ROOT)}")
     return 0
 
 

@@ -1,7 +1,7 @@
 """Checks whether yellow trips with request_source = 'HV0003' also appear in the fhvhv file.
 
 Usage:
-    python scripts/double_count_check.py
+    python -m scripts.double_count_check
 
 One day (Wednesday 2026-06-10) is read straight from the TLC URLs. A yellow trip is "matched"
 when an Uber (HV0003) fhvhv trip has the same pickup zone, the same drop-off zone, a pickup
@@ -13,22 +13,18 @@ written to reports/double_count_check.json.
 """
 import json
 import sys
-from pathlib import Path
 
 import duckdb
 import numpy as np
 
-ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT))
-
-from src.config import load_config  # noqa: E402
+from src import paths
+from src.config import load_config
 
 DAY = "2026-06-10"
 MONTH = "2026-06"
 LICENSE = "HV0003"
 TOLERANCE_SECONDS = 120
 N_BOOTSTRAP = 1000
-OUTPUT = ROOT / "reports" / "double_count_check.json"
 
 
 def bootstrap_rates(matched, total, rng):
@@ -93,7 +89,7 @@ def main():
         result[name] = {**c, "match_rate": c["matched"] / c["trips"], "ci95": interval(samples[name])}
 
     report = {
-        "generated_by": "python scripts/double_count_check.py",
+        "generated_by": "python -m scripts.double_count_check",
         "day": DAY,
         "match_rule": f"same pickup zone, same drop-off zone, |pickup diff| <= {TOLERANCE_SECONDS}s and |drop-off diff| <= {TOLERANCE_SECONDS}s",
         "fhvhv_license": LICENSE,
@@ -108,7 +104,7 @@ def main():
             "match_rate_difference": result[LICENSE]["match_rate"] - result["null"]["match_rate"],
             "ci95": interval(diff),
         }
-    OUTPUT.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    paths.DOUBLE_COUNT_CHECK.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(report, indent=2))
     return 0
 
