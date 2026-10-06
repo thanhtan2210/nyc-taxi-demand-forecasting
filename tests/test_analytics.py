@@ -281,3 +281,26 @@ def test_log_colour_scale_and_ticks():
     assert analytics.power_of_ten_ticks(706.4) == ([0, 1, 2, 3], ["1", "10", "100", "1,000"])
     assert analytics.power_of_ten_ticks(42) == ([0, 1, 2], ["1", "10", "100"])
     assert analytics.power_of_ten_ticks(0.3) == ([0, 1], ["1", "10"])
+
+
+def test_hour_snapshot_returns_every_zone_of_that_hour_only():
+    backtest = make_backtest()
+    moment = pd.Timestamp("2026-05-02 18:00")
+    backtest.loc[(backtest["hour"] == moment) & (backtest["zone_id"] == 1), ["actual", "xgb"]] = [120.0, 111.5]
+    snapshot = analytics.hour_snapshot(backtest, moment)
+    assert snapshot["zone_id"].tolist() == [1, 2]
+    assert snapshot.columns.tolist() == ["zone_id", "actual", "baseline", "xgb", "error"]
+    assert snapshot.loc[0, ["actual", "baseline", "xgb", "error"]].tolist() == [120.0, 90.0, 111.5, -8.5]
+    assert snapshot.loc[1, "error"] == 1.0
+    # the neighbouring hours are untouched and a string timestamp works too
+    assert analytics.hour_snapshot(backtest, "2026-05-02 17:00").loc[0, "actual"] == 100.0
+    assert analytics.hour_snapshot(backtest, "2027-01-01 00:00").empty
+
+
+def test_snapshot_kpis_are_citywide():
+    snapshot = analytics.hour_snapshot(make_backtest(), "2026-05-01 18:00")
+    kpis = analytics.snapshot_kpis(snapshot)
+    assert kpis["total_forecast"] == 104 + 3
+    assert kpis["total_actual"] == 100 + 2
+    assert kpis["mae_xgboost"] == pytest.approx((4 + 1) / 2)
+    assert kpis["mae_baseline"] == pytest.approx((10 + 2) / 2)

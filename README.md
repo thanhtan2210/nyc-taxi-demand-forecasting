@@ -81,7 +81,7 @@ The Streamlit app has three pages:
 
 - **Overview**: totals, how the mart reconciles with the source files, trips per day by service and a map of average trips per hour by zone.
 - **Patterns**: weekday by hour heatmap, monthly trend and service mix by borough, unusual days and a per-zone explorer.
-- **Forecast**: backtest of XGBoost against the baseline for a chosen week, accuracy tables, error by hour of day, an error map by zone and the largest misses.
+- **Forecast**: backtest of XGBoost against the baseline for a chosen week, accuracy tables, error by hour of day, a zone map (the forecast for one chosen hour, or the error over the month) and the largest misses.
 
 Tech stack:
 

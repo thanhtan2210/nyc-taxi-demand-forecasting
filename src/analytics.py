@@ -219,6 +219,24 @@ def backtest_series(backtest, start, end):
 
 # --- Forecast diagnostics ---------------------------------------------------------------
 
+def hour_snapshot(backtest, hour):
+    """Every zone at one hour: actual, baseline, XGBoost and the XGBoost error (forecast - actual)."""
+    rows = backtest[backtest["hour"] == pd.Timestamp(hour)]
+    out = rows[["zone_id", "actual", "baseline", "xgb"]].sort_values("zone_id").reset_index(drop=True)
+    out["error"] = out["xgb"] - out["actual"]
+    return out
+
+
+def snapshot_kpis(snapshot):
+    """Citywide totals and the MAE of both models over the zones of one hour."""
+    return {
+        "total_forecast": float(snapshot["xgb"].sum()),
+        "total_actual": float(snapshot["actual"].sum()),
+        "mae_xgboost": float((snapshot["xgb"] - snapshot["actual"]).abs().mean()),
+        "mae_baseline": float((snapshot["baseline"] - snapshot["actual"]).abs().mean()),
+    }
+
+
 def mae_by_hour_of_day(rows):
     """MAE of the baseline and of XGBoost for each hour of the day, over the given zone-hours."""
     errors = pd.DataFrame({

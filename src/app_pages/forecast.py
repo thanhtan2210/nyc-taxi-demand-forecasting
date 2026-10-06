@@ -6,7 +6,7 @@ import streamlit as st
 from src import analytics
 from src.app_data import (
     BASELINE_COLOR, BLUE_RAMP, LEGEND_TOP, MAP_NO_DATA_COLOR, MAP_VIEW, PLOT_MARGIN, XGBOOST_COLOR, load_backtest,
-    load_borough_metrics, load_metrics, load_zone_shapes, neutral_ink, zone_labels,
+    load_borough_metrics, load_metrics, load_zone_shapes, load_zones, neutral_ink, zone_labels,
 )
 
 metrics = load_metrics()
@@ -118,44 +118,95 @@ with st.expander("Error by hour as a table"):
                                          "mae_xgboost": "MAE XGBoost"}).style.format(
         {"MAE baseline": "{:.2f}", "MAE XGBoost": "{:.2f}"}), width="stretch", hide_index=True)
 
-st.subheader(f"Error by zone, {month_start:%B %Y}")
-zones = analytics.zone_errors(month_rows)
-zones["zone"] = zones["zone_id"].map(labels)
-stable, unstable = zones[zones["stable"]], zones[~zones["stable"]]
+st.subheader(f"Zone map, {month_start:%B %Y}")
 shapes = load_zone_shapes()
-hover = ("<b>%{customdata[0]}</b><br>%{customdata[1]:.1f} trips per hour<br>MAE XGBoost %{customdata[2]:.2f}"
-         "<br>MAE baseline %{customdata[3]:.2f}")
-fig = go.Figure()
-fig.add_choroplethmap(
-    geojson=shapes, featureidkey="properties.location_id", locations=stable["zone_id"], z=stable["wape_xgboost"],
-    customdata=stable[["zone", "mean_actual", "mae_xgboost", "mae_baseline"]],
-    colorscale=BLUE_RAMP[::-1], colorbar=dict(title="WAPE XGBoost (%)"),
-    marker=dict(opacity=0.85, line=dict(width=0.5, color="#1a1a19")),
-    hovertemplate="WAPE %{z:.1f}%<br>" + hover + "<extra></extra>", name="WAPE",
-)
-fig.add_choroplethmap(
-    geojson=shapes, featureidkey="properties.location_id", locations=unstable["zone_id"], z=[0] * len(unstable),
-    customdata=unstable[["zone", "mean_actual", "mae_xgboost", "mae_baseline"]],
-    colorscale=[[0, MAP_NO_DATA_COLOR], [1, MAP_NO_DATA_COLOR]], showscale=False,
-    marker=dict(opacity=0.6, line=dict(width=0.5, color="#1a1a19")),
-    hovertemplate="Too few trips for a stable percentage error<br>" + hover + "<extra></extra>", name="Too few trips",
-)
-fig.update_layout(margin=PLOT_MARGIN, height=560, map=dict(style=MAP_VIEW["map_style"], center=MAP_VIEW["center"],
-                                                           zoom=MAP_VIEW["zoom"]))
-st.plotly_chart(fig, width="stretch")
-st.caption(f"All zones of the city for the selected month. Grey: {len(unstable)} zones average fewer than "
-           f"{analytics.MIN_TRIPS_FOR_WAPE} trips per hour: too few trips for a stable percentage error. "
-           "Zone boundaries: NYC TLC taxi zone shapefile, converted by scripts/fetch_zone_shapes.py.")
-with st.expander("Error by zone as a table"):
-    st.dataframe(
-        zones.sort_values("wape_xgboost", ascending=False, na_position="last")[
-            ["zone", "mean_actual", "wape_xgboost", "mae_xgboost", "mae_baseline"]].rename(columns={
-                "zone": "Zone", "mean_actual": "Mean trips per hour", "wape_xgboost": "WAPE XGBoost (%)",
-                "mae_xgboost": "MAE XGBoost", "mae_baseline": "MAE baseline"}).style.format(
-            {"Mean trips per hour": "{:.1f}", "WAPE XGBoost (%)": "{:.1f}", "MAE XGBoost": "{:.2f}",
-             "MAE baseline": "{:.2f}"}, na_rep=""),
-        width="stretch", hide_index=True,
+zone_names = load_zones().set_index("zone_id")
+MAP_LAYOUT = dict(margin=PLOT_MARGIN, height=560,
+                  map=dict(style=MAP_VIEW["map_style"], center=MAP_VIEW["center"], zoom=MAP_VIEW["zoom"]))
+MAP_MARKER = dict(opacity=0.85, line=dict(width=0.5, color="#1a1a19"))
+map_view = st.radio("Map view", ["Forecast for one hour", "Error by zone (month)"], horizontal=True)
+
+if map_view == "Forecast for one hour":
+    last_day = (month_start + pd.offsets.MonthEnd(0)).date()
+    d1, d2, _ = st.columns([1, 1, 2])
+    # keyed by month, so the date goes back to the first day when another month is chosen
+    day = d1.date_input("Date", value=month_start.date(), min_value=month_start.date(), max_value=last_day,
+                        key=f"map_date_{month}")
+    hour_label = d2.selectbox("Hour", [f"{h:02d}:00" for h in range(24)], index=18)
+    moment = pd.Timestamp(day) + pd.Timedelta(hours=int(hour_label[:2]))
+
+    snapshot = analytics.hour_snapshot(month_rows, moment)
+    snapshot["zone"] = snapshot["zone_id"].map(zone_names["zone"])
+    snapshot["borough"] = snapshot["zone_id"].map(zone_names["borough"])
+    # one colour scale for the whole month, so two hours can be compared by eye
+    ticks, tick_labels = analytics.power_of_ten_ticks(month_rows["xgb"].max())
+    fig = go.Figure()
+    fig.add_choroplethmap(
+        geojson=shapes, featureidkey="properties.location_id", locations=snapshot["zone_id"],
+        z=analytics.log10_trips(snapshot["xgb"]), zmin=ticks[0], zmax=ticks[-1],
+        customdata=snapshot[["zone", "borough", "xgb", "actual", "baseline", "error"]],
+        colorscale=BLUE_RAMP[::-1], marker=MAP_MARKER, name="XGBoost forecast",
+        colorbar=dict(title="Forecast trips", tickvals=ticks, ticktext=tick_labels),
+        hovertemplate="<b>%{customdata[0]}</b><br>%{customdata[1]}<br>XGBoost %{customdata[2]:,.1f}"
+                      "<br>Actual %{customdata[3]:,.0f}<br>Baseline %{customdata[4]:,.0f}"
+                      "<br>XGBoost error %{customdata[5]:+,.1f}<extra></extra>",
     )
+    fig.update_layout(**MAP_LAYOUT)
+    st.plotly_chart(fig, width="stretch")
+
+    kpis = analytics.snapshot_kpis(snapshot)
+    k1, k2, k3 = st.columns(3)
+    k1.metric("Forecast, whole city", f"{kpis['total_forecast']:,.0f}")
+    k2.metric("Actual, whole city", f"{kpis['total_actual']:,.0f}")
+    k3.metric("MAE per zone: XGBoost vs baseline", f"{kpis['mae_xgboost']:.1f} vs {kpis['mae_baseline']:.1f}")
+    st.caption(f"XGBoost forecast of trips per zone for {moment:%Y-%m-%d %H:%M}, on a log colour scale shared by "
+               "the whole month; zones below 1 trip share the darkest colour. "
+               "Backtest: the model saw data up to the previous hour only. "
+               "Zone boundaries: NYC TLC taxi zone shapefile, converted by scripts/fetch_zone_shapes.py.")
+    with st.expander("Forecast for one hour as a table"):
+        st.dataframe(
+            snapshot[["zone_id", "zone", "borough", "xgb", "actual", "baseline", "error"]].rename(columns={
+                "zone_id": "Zone id", "zone": "Zone", "borough": "Borough", "xgb": "XGBoost", "actual": "Actual",
+                "baseline": "Baseline", "error": "XGBoost error"}).style.format(
+                {"XGBoost": "{:,.1f}", "Actual": "{:,.0f}", "Baseline": "{:,.0f}", "XGBoost error": "{:+,.1f}"}),
+            width="stretch", hide_index=True,
+        )
+else:
+    zones = analytics.zone_errors(month_rows)
+    zones["zone"] = zones["zone_id"].map(labels)
+    stable, unstable = zones[zones["stable"]], zones[~zones["stable"]]
+    hover = ("<b>%{customdata[0]}</b><br>%{customdata[1]:.1f} trips per hour<br>MAE XGBoost %{customdata[2]:.2f}"
+             "<br>MAE baseline %{customdata[3]:.2f}")
+    fig = go.Figure()
+    fig.add_choroplethmap(
+        geojson=shapes, featureidkey="properties.location_id", locations=stable["zone_id"], z=stable["wape_xgboost"],
+        customdata=stable[["zone", "mean_actual", "mae_xgboost", "mae_baseline"]],
+        colorscale=BLUE_RAMP[::-1], colorbar=dict(title="WAPE XGBoost (%)"), marker=MAP_MARKER,
+        hovertemplate="WAPE %{z:.1f}%<br>" + hover + "<extra></extra>", name="WAPE",
+    )
+    fig.add_choroplethmap(
+        geojson=shapes, featureidkey="properties.location_id", locations=unstable["zone_id"], z=[0] * len(unstable),
+        customdata=unstable[["zone", "mean_actual", "mae_xgboost", "mae_baseline"]],
+        colorscale=[[0, MAP_NO_DATA_COLOR], [1, MAP_NO_DATA_COLOR]], showscale=False,
+        marker=dict(opacity=0.6, line=dict(width=0.5, color="#1a1a19")),
+        hovertemplate="Too few trips for a stable percentage error<br>" + hover + "<extra></extra>", name="Too few trips",
+    )
+    fig.update_layout(**MAP_LAYOUT)
+    st.plotly_chart(fig, width="stretch")
+    st.caption(f"XGBoost WAPE of every zone over the selected month. Grey: {len(unstable)} zones average fewer than "
+               f"{analytics.MIN_TRIPS_FOR_WAPE} trips per hour: too few trips for a stable percentage error. "
+               "Zone boundaries: NYC TLC taxi zone shapefile, converted by scripts/fetch_zone_shapes.py.")
+    with st.expander("Error by zone as a table"):
+        st.dataframe(
+            zones.sort_values("wape_xgboost", ascending=False, na_position="last")[
+                ["zone", "mean_actual", "wape_xgboost", "mae_xgboost", "mae_baseline"]].rename(columns={
+                    "zone": "Zone", "mean_actual": "Mean trips per hour", "wape_xgboost": "WAPE XGBoost (%)",
+                    "mae_xgboost": "MAE XGBoost", "mae_baseline": "MAE baseline"}).style.format(
+                {"Mean trips per hour": "{:.1f}", "WAPE XGBoost (%)": "{:.1f}", "MAE XGBoost": "{:.2f}",
+                 "MAE baseline": "{:.2f}"}, na_rep=""),
+            width="stretch", hide_index=True,
+        )
+
 st.subheader(f"Largest misses: {title}, {month_start:%B %Y}")
 misses = analytics.largest_misses(selected_rows, 10)
 misses["zone"] = misses["zone_id"].map(labels)

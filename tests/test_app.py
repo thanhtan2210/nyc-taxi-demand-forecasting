@@ -2,6 +2,7 @@
 import ast
 import base64
 import json
+from datetime import date
 from pathlib import Path
 
 import numpy as np
@@ -78,34 +79,74 @@ def test_forecast_page_renders_and_reacts_to_selection():
     at = open_app().switch_page("src/app_pages/forecast.py").run()
     assert not at.exception
     assert at.title[0].value == "Forecast backtest"
-    assert [s.label for s in at.selectbox] == ["Test month", "Borough", "Week"]
+    assert [s.label for s in at.selectbox] == ["Test month", "Borough", "Week", "Hour"]
     assert at.selectbox[0].options == ["2026-05", "2026-06", "2026-07"]
     assert len(at.selectbox[2].options) == 5  # May 2026 in seven-day windows
     assert at.selectbox[2].index == 0         # the first week is the default
-    assert len(at.get("plotly_chart")) == 3  # backtest lines, error by hour of day, error map
-    # the error map has a coloured trace and a grey one, and together they cover every zone once
-    maps = map_traces(at)
-    assert [m["name"] for m in maps] == ["WAPE", "Too few trips"]
-    assert sorted(decoded(maps[0]["locations"]) + decoded(maps[1]["locations"])) == list(range(1, 264))
-    assert "Error by zone as a table" in [e.label for e in at.expander]
-    # hourly values, accuracy by period, accuracy by borough, error by hour, error by zone, largest misses
-    assert len(at.dataframe) == 6
     assert [s.value.split(":")[0].split(",")[0] for s in at.subheader] == [
-        "Manhattan", "Accuracy by period", "Accuracy by borough", "Error by hour of day", "Error by zone",
-        "Largest misses"]
-    assert any("too few trips for a stable percentage error" in c.value for c in at.caption)
-    assert any("No cause is attributed" in c.value for c in at.caption)
+        "Manhattan", "Accuracy by period", "Accuracy by borough", "Error by hour of day", "Zone map", "Largest misses"]
+    assert len(at.get("plotly_chart")) == 3  # backtest lines, error by hour of day, zone map
     assert any("not a live forecast" in c.value for c in at.caption)
     assert any("trips per zone-hour" in c.value for c in at.caption)
+    assert any("No cause is attributed" in c.value for c in at.caption)
 
     at.selectbox[0].select("2026-07").run()
     at.selectbox[2].select_index(4).run()
     at.radio[0].set_value("Zone").run()
     assert not at.exception
-    assert [s.label for s in at.selectbox] == ["Test month", "Zone", "Week"]
+    assert [s.label for s in at.selectbox] == ["Test month", "Zone", "Week", "Hour"]
     at.selectbox[1].select_index(3).run()
     assert not at.exception
     assert "July 2026" in at.subheader[0].value
+
+
+def test_forecast_map_for_one_hour():
+    at = open_app().switch_page("src/app_pages/forecast.py").run()
+    assert [r.label for r in at.radio] == ["Level", "Map view"]
+    assert at.radio[1].value == "Forecast for one hour"  # the default view
+    assert at.date_input[0].value == date(2026, 5, 1)    # first day of the test month
+    assert at.selectbox[3].value == "18:00"
+
+    maps = map_traces(at)
+    assert [m["name"] for m in maps] == ["XGBoost forecast"]
+    assert sorted(decoded(maps[0]["locations"])) == list(range(1, 264))
+    assert [m.label for m in at.metric] == ["Forecast, whole city", "Actual, whole city", "MAE per zone: XGBoost vs baseline"]
+    assert any("the model saw data up to the previous hour only" in c.value for c in at.caption)
+    assert "Forecast for one hour as a table" in [e.label for e in at.expander]
+    evening_total = at.metric[0].value
+    evening_colours = decoded(maps[0]["z"])
+
+    # another date and hour: the page still renders and shows different numbers
+    at.date_input[0].set_value(date(2026, 5, 20)).run()
+    at.selectbox[3].select("04:00").run()
+    assert not at.exception
+    assert any("2026-05-20 04:00" in c.value for c in at.caption)
+    assert at.metric[0].value != evening_total
+    assert decoded(map_traces(at)[0]["z"]) != evening_colours
+
+    # another month: the date goes back to the first day of that month
+    at.selectbox[0].select("2026-06").run()
+    assert not at.exception
+    assert at.date_input[0].value == date(2026, 6, 1)
+
+
+def test_forecast_map_of_monthly_error():
+    at = open_app().switch_page("src/app_pages/forecast.py").run()
+    at.radio[1].set_value("Error by zone (month)").run()
+    assert not at.exception
+    # a coloured trace and a grey one that together cover every zone once
+    maps = map_traces(at)
+    assert [m["name"] for m in maps] == ["WAPE", "Too few trips"]
+    assert sorted(decoded(maps[0]["locations"]) + decoded(maps[1]["locations"])) == list(range(1, 264))
+    assert any("too few trips for a stable percentage error" in c.value for c in at.caption)
+    assert "Error by zone as a table" in [e.label for e in at.expander]
+    assert len(at.date_input) == 0 and [s.label for s in at.selectbox] == ["Test month", "Borough", "Week"]
+    grey_zones = len(decoded(maps[1]["locations"]))
+    assert any(f"Grey: {grey_zones} zones" in c.value for c in at.caption)
+
+    at.selectbox[0].select("2026-07").run()
+    assert not at.exception
+    assert len(map_traces(at)) == 2
 
 
 def test_app_does_not_import_the_warehouse_or_the_model():
