@@ -141,6 +141,13 @@ def test_unknown_zones_are_excluded_from_mart_but_kept_in_fact(built):
     assert outside == 0
 
 
+def test_dim_zone_is_exported_next_to_the_mart(built):
+    zones = pd.read_csv(built["paths"]["mart_dir"].parent / "dim_zone.csv", keep_default_na=False)
+    assert list(zones.columns) == ["zone_id", "borough", "zone", "service_zone"]
+    assert zones["zone_id"].tolist() == [1, 2, 3, 264, 265]
+    assert zones.loc[zones["zone_id"] == 2, "zone"].item() == "Jamaica Bay"
+
+
 def test_existing_month_is_skipped_unless_forced(built):
     assert built["built_months"] == [MONTH]
     assert run([MONTH], built["cfg"], **built["paths"]) == []

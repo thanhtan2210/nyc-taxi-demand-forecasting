@@ -83,6 +83,15 @@ def build_dimensions(con, cfg):
     con.execute("CREATE OR REPLACE TABLE dim_hour AS SELECT * FROM hours ORDER BY hour")
 
 
+def export_dim_zone(con, path):
+    """Writes dim_zone next to the mart so the app and Power BI can read it without DuckDB."""
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
+    con.execute(
+        f"COPY (SELECT zone_id, borough, zone, service_zone FROM dim_zone ORDER BY zone_id) "
+        f"TO '{Path(path).as_posix()}' (HEADER, DELIMITER ',')"
+    )
+
+
 def load_service_month(con, cfg, service, month):
     """Loads one (service, month) file into the fact table and returns its row accounting."""
     columns = cfg["services"][service]
@@ -155,6 +164,7 @@ def run(months, cfg, db_path=DEFAULT_DB, mart_dir=DEFAULT_MART, quality_path=DEF
     con = connect(db_path, cfg)
     try:
         build_dimensions(con, cfg)
+        export_dim_zone(con, Path(mart_dir).parent / "dim_zone.csv")
         for month in todo:
             start, end = month_bounds(month)
             con.execute("DELETE FROM fact_pickups_hourly WHERE hour >= ? AND hour < ?", [start, end])
