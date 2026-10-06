@@ -14,6 +14,8 @@ SERVICES = ["fhvhv", "fhv", "green", "yellow"]
 SERVICE_COLUMNS = [f"trips_{s}" for s in SERVICES]
 TRIP_COLUMNS = ["trips_total"] + SERVICE_COLUMNS
 WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+# A day is unusual below 60% or above 140% of the median of the same weekday, 4 weeks either side.
+UNUSUAL_LOW, UNUSUAL_HIGH, UNUSUAL_WEEKS = 0.6, 1.4, 4
 DROP_REASONS = {
     "rows_outside_month": "with a pickup time outside the month",
     "rows_zone_null": "without a pickup zone",
@@ -93,9 +95,67 @@ def fhv_null_zone_share(entries):
     return (100 * fhv["rows_zone_null"] / fhv["rows_read"]).set_axis(fhv["month"]).rename("pct_zone_null")
 
 
+# --- Patterns ---------------------------------------------------------------------------
+
+def borough_hourly(mart):
+    """Trips per borough and hour: a small cube that the borough-level charts are built from."""
+    return mart.groupby(["borough", "hour"], observed=True)[TRIP_COLUMNS].sum().reset_index()
+
+
+def weekday_hour_heatmap(frame, column="trips_total"):
+    """Mean trips per hour for each weekday (rows Mon..Sun) and hour of day (columns 0..23)."""
+    hourly = frame.groupby("hour")[column].sum()
+    cells = pd.DataFrame({
+        "weekday": hourly.index.dayofweek, "hour_of_day": hourly.index.hour, "trips": hourly.to_numpy(),
+    })
+    table = cells.pivot_table(index="weekday", columns="hour_of_day", values="trips", aggfunc="mean")
+    table = table.reindex(index=range(7), columns=range(24))
+    table.index = WEEKDAYS
+    return table
+
+
+def monthly_trend(frame, by=None):
+    """Mean trips per day in each month, for the whole frame or per value of the `by` column."""
+    month = frame["hour"].dt.strftime("%Y-%m").rename("month")
+    days = frame["hour"].dt.normalize().groupby(month).nunique().rename("n_days")
+    keys = [month] if by is None else [month, frame[by]]
+    totals = frame.groupby(keys, observed=True)["trips_total"].sum().reset_index()
+    totals = totals.merge(days.reset_index(), on="month")
+    totals["trips_per_day"] = totals["trips_total"] / totals["n_days"]
+    return totals.drop(columns=["trips_total", "n_days"])
+
+
+def month_over_month(trend, by):
+    """Change (%) of trips per day against the previous month: months as rows, groups as columns."""
+    wide = trend.pivot(index="month", columns=by, values="trips_per_day").sort_index()
+    return 100 * wide.pct_change()
+
+
+def service_mix_by_borough(frame):
+    """Share (%) of each service within every borough (the shares of a borough add up to 100)."""
+    trips = frame.groupby("borough", observed=True)[SERVICE_COLUMNS].sum()
+    share = 100 * trips.div(trips.sum(axis=1).where(lambda s: s > 0), axis=0)
+    share.columns = SERVICES
+    trips.columns = SERVICES
+    out = share.stack().rename("share_pct").reset_index().rename(columns={"level_1": "service"})
+    out["trips"] = trips.stack().to_numpy()
+    return out
+
+
+def zone_kpis(zone_frame):
+    """Total trips, mean trips per hour and the busiest hour of the day for one zone."""
+    by_hour = zone_frame.groupby(zone_frame["hour"].dt.hour)["trips_total"].mean()
+    return {
+        "total_trips": int(zone_frame["trips_total"].sum()),
+        "avg_trips_per_hour": float(zone_frame["trips_total"].mean()),
+        "peak_hour_of_day": int(by_hour.idxmax()),
+        "peak_hour_avg_trips": float(by_hour.max()),
+    }
+
+
 # --- Unusual days -----------------------------------------------------------------------
 
-def unusual_days(daily, low=0.6, high=1.4, weeks=4, min_reference_days=4):
+def unusual_days(daily, low=UNUSUAL_LOW, high=UNUSUAL_HIGH, weeks=UNUSUAL_WEEKS, min_reference_days=4):
     """Days whose total is below `low` or above `high` times their normal level.
 
     The normal level of a day is the median of the same weekday in the `weeks` weeks before

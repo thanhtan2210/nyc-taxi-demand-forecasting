@@ -158,3 +158,71 @@ def test_backtest_series_sums_zones_per_hour():
     assert (out["actual"] == 20).all() and (out["baseline"] == 16).all() and (out["xgb"] == 18).all()
     assert out["hour"].max() == pd.Timestamp("2026-05-01 23:00")
     assert not np.isnan(out[["actual", "baseline", "xgb"]].to_numpy()).any()
+
+
+def test_weekday_hour_heatmap_shape_and_values(mart):
+    mart = mart.copy()
+    friday_evening = (mart["hour"].dt.dayofweek == 4) & (mart["hour"].dt.hour == 18)
+    mart.loc[friday_evening, "trips_total"] = 100
+    table = analytics.weekday_hour_heatmap(mart)
+    assert table.shape == (7, 24)
+    assert table.index.tolist() == ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    assert table.loc["Fri", 18] == 200  # two zones x 100
+    assert table.loc["Fri", 17] == 40
+    assert table.loc["Mon", 18] == 40
+    # one service, one borough
+    queens = analytics.borough_hourly(mart)
+    queens = queens[queens["borough"] == "Queens"]
+    assert (analytics.weekday_hour_heatmap(queens, "trips_yellow").to_numpy() == 4).all()
+
+
+def test_borough_hourly_keeps_totals(mart):
+    cube = analytics.borough_hourly(mart)
+    assert len(cube) == 2 * 70 * 24
+    assert cube["trips_total"].sum() == mart["trips_total"].sum()
+    assert set(cube["borough"]) == {"Manhattan", "Queens"}
+
+
+def test_monthly_trend_and_month_over_month():
+    mart = make_mart(start="2026-01-01", days=90)  # January, February and March 2026
+    in_feb = mart["hour"].dt.month == 2
+    mart.loc[in_feb & (mart["zone_id"] == 1), "trips_total"] = 30  # Manhattan +50% in February
+    trend = analytics.monthly_trend(mart, by="borough")
+    wide = trend.pivot(index="month", columns="borough", values="trips_per_day")
+    assert wide.index.tolist() == ["2026-01", "2026-02", "2026-03"]
+    assert wide.loc["2026-01", "Manhattan"] == 24 * 20
+    assert wide.loc["2026-02", "Manhattan"] == 24 * 30  # per day, so month length does not matter
+    assert wide.loc["2026-02", "Queens"] == 24 * 20
+
+    change = analytics.month_over_month(trend, by="borough")
+    assert np.isnan(change.loc["2026-01", "Manhattan"])
+    assert change.loc["2026-02", "Manhattan"] == pytest.approx(50.0)
+    assert change.loc["2026-03", "Manhattan"] == pytest.approx(-100 / 3)
+    assert change.loc["2026-02", "Queens"] == pytest.approx(0.0)
+
+    # without a grouping column: one row per month for the whole frame
+    city = analytics.monthly_trend(mart)
+    assert city.columns.tolist() == ["month", "trips_per_day"]
+    assert city.set_index("month").loc["2026-01", "trips_per_day"] == 2 * 24 * 20
+
+
+def test_service_mix_by_borough_rows_add_up_to_100(mart):
+    mart = mart.copy()
+    mart.loc[mart["borough"] == "Queens", "trips_yellow"] = 0
+    mix = analytics.service_mix_by_borough(mart)
+    assert mix.groupby("borough", observed=True)["share_pct"].sum().tolist() == pytest.approx([100, 100])
+    wide = mix.pivot(index="borough", columns="service", values="share_pct")
+    assert wide.loc["Manhattan"].to_dict() == pytest.approx({"fhvhv": 60, "fhv": 10, "green": 10, "yellow": 20})
+    assert wide.loc["Queens", "yellow"] == 0
+    assert wide.loc["Queens", "fhvhv"] == pytest.approx(75.0)
+    assert mix["trips"].sum() == mart[analytics.SERVICE_COLUMNS].to_numpy().sum()
+
+
+def test_zone_kpis(mart):
+    zone = mart[mart["zone_id"] == 1].copy()
+    zone.loc[zone["hour"].dt.hour == 8, "trips_total"] = 44
+    kpis = analytics.zone_kpis(zone)
+    assert kpis["peak_hour_of_day"] == 8
+    assert kpis["peak_hour_avg_trips"] == 44
+    assert kpis["total_trips"] == 70 * (23 * 20 + 44)
+    assert kpis["avg_trips_per_hour"] == pytest.approx((23 * 20 + 44) / 24)

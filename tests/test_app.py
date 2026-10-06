@@ -27,11 +27,30 @@ def test_overview_page_renders():
     assert sum(e.label.endswith("as a table") for e in at.expander) == 4
 
 
-def test_patterns_page_renders():
+def test_patterns_page_renders_and_reacts_to_selection():
     at = open_app().switch_page("src/app_pages/patterns.py").run()
     assert not at.exception
     assert at.title[0].value == "Demand patterns"
+    assert [s.value for s in at.subheader] == [
+        "Weekly rhythm", "Monthly trend by borough", "Service mix by borough", "Unusual days", "Zone explorer"]
+    assert [s.label for s in at.selectbox] == ["Area", "Service", "Zone"]
+    assert at.selectbox[0].options[0] == "City" and len(at.selectbox[0].options) == 7
+    assert len(at.selectbox[2].options) == 263
+    assert [m.label for m in at.metric] == ["Trips in the period", "Average trips per hour", "Busiest hour of the day"]
+    # heatmap, borough trend, service mix, zone profile, zone trend, zone service mix
+    assert len(at.get("plotly_chart")) == 6
+    assert sum(e.label.endswith("as a table") for e in at.expander) == 6
+    assert any("No cause is attributed" in c.value for c in at.caption)
+    busiest_zone_trips = at.metric[0].value
 
+    at.selectbox[0].select("Queens").run()
+    at.selectbox[1].select("Yellow taxi").run()
+    at.selectbox[2].select_index(200).run()
+    assert not at.exception
+    assert at.metric[0].value != busiest_zone_trips
+    # a zone without any trip must not break the page
+    at.selectbox[2].select_index(262).run()
+    assert not at.exception
 
 def test_forecast_page_renders_and_reacts_to_selection():
     at = open_app().switch_page("src/app_pages/forecast.py").run()
