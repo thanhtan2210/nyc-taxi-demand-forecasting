@@ -1,0 +1,44 @@
+{
+  "generated_by": "python scripts/leakage_check.py",
+  "scope": "validation month only; the test months are not read by the model here",
+  "lag_features_vs_sql_max_abs_diff": {
+    "lag_1": 0.0,
+    "lag_2": 0.0,
+    "lag_3": 0.0,
+    "lag_24": 0.0,
+    "lag_168": 0.0,
+    "roll_mean_24": 0.0
+  },
+  "validation": {
+    "naive": {
+      "last_hour_lag_1": {
+        "mae": 25.66493979721166,
+        "rmse": 47.987537824299025,
+        "wape": 0.19281741478716247
+      },
+      "last_week_lag_168": {
+        "mae": 19.068525559780312,
+        "rmse": 38.056875476294245,
+        "wape": 0.14325939711104352
+      }
+    },
+    "xgboost_selected": {
+      "mae": 12.517497615444933,
+      "rmse": 24.151400500266522,
+      "wape": 0.09404236085824697
+    },
+    "xgboost_without_short_term_features": {
+      "features": [
+        "zone_id",
+        "hour_of_day",
+        "day_of_week",
+        "is_holiday",
+        "lag_24",
+        "lag_168"
+      ],
+      "mae": 14.993855502824202,
+      "rmse": 30.69004760115465,
+      "wape": 0.11264692138732117
+    }
+  }
+}
