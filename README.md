@@ -85,6 +85,7 @@ Tests: `pytest -q` (no network needed).
 
 ## Limitations
 
+- **The mart is not the full TLC volume.** The source files hold 376,425,148 trips; 350,804,859 of them (93.2%) could be placed on a taxi zone and are in the mart. Of the 25,620,289 trips left out, 25,472,687 are FHV trips without a pickup zone (from [`reports/data_quality.json`](reports/data_quality.json)).
 - **FHV is mostly missing.** Between 80% and 92% of FHV trips per month have no pickup zone in the source files and cannot be counted, so the "all services" total under-counts this service.
 - **Possible double counting was checked on one day only.** Since June 2026 the yellow files carry an undocumented `request_source` column with values such as `HV0003` (Uber's licence number in the HVFHS data dictionary). On Wednesday 2026-06-10, 7.8% of those yellow trips (2,029 of 26,113) matched an Uber trip in the fhvhv file on zones and times, against 9.6% (10,383 of 108,722) of yellow trips without a `request_source` ([`reports/double_count_check.json`](reports/double_count_check.json)). That is no evidence of double counting, but it is one day and one matching rule, and TLC does not document the column.
 - **The tree limit was reached.** The selected model stopped at 599 of at most 600 trees, so it was still improving. The limit was fixed before training and not raised afterwards, because the test months had already been used.

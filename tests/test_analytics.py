@@ -1,0 +1,160 @@
+"""Unit tests of the pure functions behind the app, on small hand-made frames."""
+import numpy as np
+import pandas as pd
+import pytest
+
+from src import analytics
+
+
+def make_mart(start="2026-01-05", days=70, zones=((1, "Manhattan"), (2, "Queens"))):
+    """A flat synthetic mart: every zone-hour has the same trips, so expected values are easy.
+
+    Per zone and hour: fhvhv 12, fhv 2, green 2, yellow 4 (total 20). 2026-01-05 is a Monday.
+    """
+    hours = pd.date_range(start, periods=24 * days, freq="h")
+    frames = []
+    for zone_id, borough in zones:
+        frames.append(pd.DataFrame({
+            "hour": hours, "zone_id": zone_id, "borough": borough,
+            "trips_fhvhv": 12, "trips_fhv": 2, "trips_green": 2, "trips_yellow": 4,
+        }))
+    mart = pd.concat(frames, ignore_index=True)
+    mart["trips_total"] = mart[analytics.SERVICE_COLUMNS].sum(axis=1)
+    return mart
+
+
+@pytest.fixture
+def mart():
+    return make_mart()
+
+
+QUALITY = [
+    {"service": "yellow", "month": "2026-01", "rows_read": 100, "rows_outside_month": 2, "rows_zone_null": 0,
+     "rows_zone_264_265": 8, "rows_zone_out_of_range": 0, "rows_in_mart": 90},
+    {"service": "fhv", "month": "2026-01", "rows_read": 200, "rows_outside_month": 0, "rows_zone_null": 160,
+     "rows_zone_264_265": 0, "rows_zone_out_of_range": 0, "rows_in_mart": 40},
+    {"service": "fhv", "month": "2026-02", "rows_read": 100, "rows_outside_month": 0, "rows_zone_null": 90,
+     "rows_zone_264_265": 0, "rows_zone_out_of_range": 0, "rows_in_mart": 10},
+]
+
+
+def test_overview_kpis_and_daily_totals(mart):
+    kpis = analytics.overview_kpis(mart)
+    assert kpis["total_trips"] == 2 * 70 * 24 * 20
+    assert kpis["n_zones"] == 2
+    assert kpis["first_hour"] == pd.Timestamp("2026-01-05 00:00")
+    daily = analytics.daily_totals(mart)
+    assert len(daily) == 70
+    assert (daily["trips_total"] == 2 * 24 * 20).all()
+    assert (daily["trips_fhvhv"] == 2 * 24 * 12).all()
+
+
+def test_service_share_sums_to_100_in_fixed_order(mart):
+    share = analytics.service_share(mart)
+    assert share["service"].tolist() == ["fhvhv", "fhv", "green", "yellow"]
+    assert share["share_pct"].tolist() == pytest.approx([60, 10, 10, 20])
+    assert share["trips"].sum() == mart["trips_total"].sum()
+    # also works on a subset, e.g. one zone
+    assert analytics.service_share(mart[mart["zone_id"] == 1])["share_pct"].sum() == pytest.approx(100)
+
+
+def test_hourly_profile_separates_weekdays_and_weekends(mart):
+    mart = mart.copy()
+    weekend_noon = (mart["hour"].dt.dayofweek >= 5) & (mart["hour"].dt.hour == 12)
+    mart.loc[weekend_noon, "trips_total"] = 50
+    profile = analytics.hourly_profile(mart).set_index(["day_type", "hour_of_day"])["trips_per_hour"]
+    assert len(profile) == 48
+    assert profile["Weekday", 12] == 40   # two zones x 20
+    assert profile["Weekend", 12] == 100  # two zones x 50
+    assert profile["Weekend", 13] == 40
+
+
+def test_zone_totals_and_top_zones(mart):
+    mart = mart.copy()
+    mart.loc[mart["zone_id"] == 2, "trips_total"] = 30
+    zones = pd.DataFrame({"zone_id": [1, 2, 264], "zone": ["A", "B", "N/A"], "borough": ["Manhattan", "Queens", "Unknown"]})
+    table = analytics.zone_totals(mart, zones).set_index("zone_id")
+    assert table.loc[2, "avg_trips_per_hour"] == 30
+    assert table.loc[1, "trips_total"] == 70 * 24 * 20
+    assert table.loc[2, "zone"] == "B"
+    assert analytics.top_zones(table.reset_index(), 1)["zone_id"].tolist() == [2]
+
+
+def test_source_vs_mart_adds_up_and_finds_the_largest_gap():
+    table = analytics.source_vs_mart(QUALITY).set_index("service")
+    assert table.index.tolist() == ["yellow", "fhv", "all"]
+    assert table.loc["fhv", "rows_read"] == 300
+    assert table.loc["fhv", "rows_zone_null"] == 250
+    assert table.loc["all", "rows_read"] == 400
+    assert table.loc["all", "rows_in_mart"] == 140
+    assert table.loc["all", "pct_in_mart"] == pytest.approx(35.0)
+    assert analytics.largest_gap(table.reset_index()) == ("fhv", "rows_zone_null", 250)
+
+
+def test_fhv_null_zone_share_per_month():
+    share = analytics.fhv_null_zone_share(QUALITY)
+    assert share.to_dict() == pytest.approx({"2026-01": 80.0, "2026-02": 90.0})
+
+
+def test_unusual_days_finds_a_deliberate_drop_and_its_services(mart):
+    drop_day = pd.Timestamp("2026-02-11")  # a Wednesday with four weeks of data on both sides
+    on_day = mart["hour"].dt.normalize() == drop_day
+    # every service falls to half, except yellow which falls to zero -> total = 4/10 of normal
+    mart.loc[on_day, ["trips_fhvhv", "trips_fhv", "trips_green", "trips_yellow"]] = [6, 1, 1, 0]
+    mart["trips_total"] = mart[analytics.SERVICE_COLUMNS].sum(axis=1)
+
+    found = analytics.unusual_days(analytics.daily_totals(mart))
+    assert found["date"].tolist() == [drop_day]
+    row = found.iloc[0]
+    assert row["weekday"] == "Wed"
+    assert row["pct_of_normal"] == pytest.approx(40.0)
+    assert row["pct_fhvhv"] == pytest.approx(50.0)
+    assert row["pct_yellow"] == pytest.approx(0.0)
+    assert row["trips_total"] == 2 * 24 * 8
+
+
+def test_unusual_days_thresholds_and_reference_exclude_the_day_itself(mart):
+    daily = analytics.daily_totals(mart).astype(float)
+    assert analytics.unusual_days(daily).empty  # a flat series has no unusual day
+
+    spike = daily.copy()
+    spike.loc["2026-02-11"] *= 1.5
+    found = analytics.unusual_days(spike)
+    assert found["date"].tolist() == [pd.Timestamp("2026-02-11")]
+    assert found.iloc[0]["pct_of_normal"] == pytest.approx(150.0)  # the spike is not part of its own reference
+    assert analytics.unusual_days(spike, high=1.6).empty
+
+    # 59% is flagged, 61% is not
+    for factor, expected in [(0.59, 1), (0.61, 0)]:
+        dip = daily.copy()
+        dip.loc["2026-02-11"] *= factor
+        assert len(analytics.unusual_days(dip)) == expected
+
+
+def test_unusual_days_ignores_days_without_enough_reference_days():
+    short = analytics.daily_totals(make_mart(days=21)).astype(float)  # at most 2 same-weekday neighbours
+    short.iloc[10] *= 0.1
+    assert analytics.unusual_days(short).empty
+    relaxed = analytics.unusual_days(short, min_reference_days=2).set_index("date")
+    assert relaxed.loc[pd.Timestamp("2026-01-15"), "pct_of_normal"] == pytest.approx(10.0)
+
+
+def test_month_weeks_cover_the_month_without_overlap():
+    weeks = analytics.month_weeks("2026-05")
+    assert weeks[0] == (pd.Timestamp("2026-05-01"), pd.Timestamp("2026-05-08"))
+    assert weeks[-1] == (pd.Timestamp("2026-05-29"), pd.Timestamp("2026-06-01"))
+    assert len(weeks) == 5
+    assert all(a[1] == b[0] for a, b in zip(weeks, weeks[1:]))
+    assert len(analytics.month_weeks("2026-02")) == 4
+
+
+def test_backtest_series_sums_zones_per_hour():
+    hours = pd.date_range("2026-05-01", periods=48, freq="h")
+    backtest = pd.concat([
+        pd.DataFrame({"hour": hours, "zone_id": z, "actual": 10.0, "baseline": 8.0, "xgb": 9.0}) for z in (1, 2)
+    ])
+    out = analytics.backtest_series(backtest, pd.Timestamp("2026-05-01"), pd.Timestamp("2026-05-02"))
+    assert len(out) == 24
+    assert (out["actual"] == 20).all() and (out["baseline"] == 16).all() and (out["xgb"] == 18).all()
+    assert out["hour"].max() == pd.Timestamp("2026-05-01 23:00")
+    assert not np.isnan(out[["actual", "baseline", "xgb"]].to_numpy()).any()
