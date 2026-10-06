@@ -9,3 +9,5 @@ xgboost==3.4.1
 scikit-learn==1.9.1
 joblib==1.6.0
 pytest==9.1.1
+streamlit==1.65.0
+plotly==7.1.0
