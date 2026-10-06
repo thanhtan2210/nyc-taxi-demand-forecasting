@@ -82,7 +82,12 @@ def test_forecast_page_renders_and_reacts_to_selection():
     assert at.selectbox[0].options == ["2026-05", "2026-06", "2026-07"]
     assert len(at.selectbox[2].options) == 5  # May 2026 in seven-day windows
     assert at.selectbox[2].index == 0         # the first week is the default
-    assert len(at.get("plotly_chart")) == 2  # backtest lines, error by hour of day
+    assert len(at.get("plotly_chart")) == 3  # backtest lines, error by hour of day, error map
+    # the error map has a coloured trace and a grey one, and together they cover every zone once
+    maps = map_traces(at)
+    assert [m["name"] for m in maps] == ["WAPE", "Too few trips"]
+    assert sorted(decoded(maps[0]["locations"]) + decoded(maps[1]["locations"])) == list(range(1, 264))
+    assert "Error by zone as a table" in [e.label for e in at.expander]
     # hourly values, accuracy by period, accuracy by borough, error by hour, error by zone, largest misses
     assert len(at.dataframe) == 6
     assert [s.value.split(":")[0].split(",")[0] for s in at.subheader] == [

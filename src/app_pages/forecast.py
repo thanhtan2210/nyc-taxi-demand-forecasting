@@ -5,8 +5,8 @@ import streamlit as st
 
 from src import analytics
 from src.app_data import (
-    BASELINE_COLOR, LEGEND_TOP, PLOT_MARGIN, XGBOOST_COLOR, load_backtest, load_borough_metrics, load_metrics,
-    neutral_ink, zone_labels,
+    BASELINE_COLOR, BLUE_RAMP, LEGEND_TOP, MAP_NO_DATA_COLOR, MAP_VIEW, PLOT_MARGIN, XGBOOST_COLOR, load_backtest,
+    load_borough_metrics, load_metrics, load_zone_shapes, neutral_ink, zone_labels,
 )
 
 metrics = load_metrics()
@@ -121,20 +121,41 @@ with st.expander("Error by hour as a table"):
 st.subheader(f"Error by zone, {month_start:%B %Y}")
 zones = analytics.zone_errors(month_rows)
 zones["zone"] = zones["zone_id"].map(labels)
-unstable = int((~zones["stable"]).sum())
-st.dataframe(
-    zones.sort_values("wape_xgboost", ascending=False, na_position="last")[
-        ["zone", "mean_actual", "wape_xgboost", "mae_xgboost", "mae_baseline"]].rename(columns={
-            "zone": "Zone", "mean_actual": "Mean trips per hour", "wape_xgboost": "WAPE XGBoost (%)",
-            "mae_xgboost": "MAE XGBoost", "mae_baseline": "MAE baseline"}).style.format(
-        {"Mean trips per hour": "{:.1f}", "WAPE XGBoost (%)": "{:.1f}", "MAE XGBoost": "{:.2f}",
-         "MAE baseline": "{:.2f}"}, na_rep=""),
-    width="stretch", hide_index=True, height=320,
+stable, unstable = zones[zones["stable"]], zones[~zones["stable"]]
+shapes = load_zone_shapes()
+hover = ("<b>%{customdata[0]}</b><br>%{customdata[1]:.1f} trips per hour<br>MAE XGBoost %{customdata[2]:.2f}"
+         "<br>MAE baseline %{customdata[3]:.2f}")
+fig = go.Figure()
+fig.add_choroplethmap(
+    geojson=shapes, featureidkey="properties.location_id", locations=stable["zone_id"], z=stable["wape_xgboost"],
+    customdata=stable[["zone", "mean_actual", "mae_xgboost", "mae_baseline"]],
+    colorscale=BLUE_RAMP[::-1], colorbar=dict(title="WAPE XGBoost (%)"),
+    marker=dict(opacity=0.85, line=dict(width=0.5, color="#1a1a19")),
+    hovertemplate="WAPE %{z:.1f}%<br>" + hover + "<extra></extra>", name="WAPE",
 )
-st.caption(f"All zones of the city for the selected month, highest WAPE first. {unstable} zones average fewer than "
-           f"{analytics.MIN_TRIPS_FOR_WAPE} trips per hour: too few trips for a stable percentage error, so their "
-           "WAPE is left empty.")
-
+fig.add_choroplethmap(
+    geojson=shapes, featureidkey="properties.location_id", locations=unstable["zone_id"], z=[0] * len(unstable),
+    customdata=unstable[["zone", "mean_actual", "mae_xgboost", "mae_baseline"]],
+    colorscale=[[0, MAP_NO_DATA_COLOR], [1, MAP_NO_DATA_COLOR]], showscale=False,
+    marker=dict(opacity=0.6, line=dict(width=0.5, color="#1a1a19")),
+    hovertemplate="Too few trips for a stable percentage error<br>" + hover + "<extra></extra>", name="Too few trips",
+)
+fig.update_layout(margin=PLOT_MARGIN, height=560, map=dict(style=MAP_VIEW["map_style"], center=MAP_VIEW["center"],
+                                                           zoom=MAP_VIEW["zoom"]))
+st.plotly_chart(fig, width="stretch")
+st.caption(f"All zones of the city for the selected month. Grey: {len(unstable)} zones average fewer than "
+           f"{analytics.MIN_TRIPS_FOR_WAPE} trips per hour: too few trips for a stable percentage error. "
+           "Zone boundaries: NYC TLC taxi zone shapefile, converted by scripts/fetch_zone_shapes.py.")
+with st.expander("Error by zone as a table"):
+    st.dataframe(
+        zones.sort_values("wape_xgboost", ascending=False, na_position="last")[
+            ["zone", "mean_actual", "wape_xgboost", "mae_xgboost", "mae_baseline"]].rename(columns={
+                "zone": "Zone", "mean_actual": "Mean trips per hour", "wape_xgboost": "WAPE XGBoost (%)",
+                "mae_xgboost": "MAE XGBoost", "mae_baseline": "MAE baseline"}).style.format(
+            {"Mean trips per hour": "{:.1f}", "WAPE XGBoost (%)": "{:.1f}", "MAE XGBoost": "{:.2f}",
+             "MAE baseline": "{:.2f}"}, na_rep=""),
+        width="stretch", hide_index=True,
+    )
 st.subheader(f"Largest misses: {title}, {month_start:%B %Y}")
 misses = analytics.largest_misses(selected_rows, 10)
 misses["zone"] = misses["zone_id"].map(labels)
