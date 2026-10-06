@@ -63,6 +63,8 @@ Produced by `python -m src.warehouse` → [`reports/data_quality.json`](reports/
 
 ![Patterns page of the Streamlit app](docs/images/patterns.png)
 
+![Map of average trips per hour by taxi zone](docs/images/map.png)
+
 The app reads only the files committed to this repository: it needs no database and no model, and the tests run without a network connection (the map background tiles are loaded by the browser).
 
 ## How it works
@@ -148,8 +150,9 @@ Tech stack:
 2. **pandas / pyarrow** for features and evaluation.
 3. **XGBoost** for the single global model.
 4. **Streamlit + Plotly** for the three-page app.
-5. **Power BI** on the same mart files, see [`docs/powerbi.md`](docs/powerbi.md).
-6. **GitHub Actions** runs the tests and can rebuild one month to compare it with the committed mart.
+5. **GitHub Actions** runs the tests and can rebuild one month to compare it with the committed mart.
+
+Power BI connection guide: [`docs/powerbi.md`](docs/powerbi.md).
 
 ## How to run
 
@@ -184,4 +187,6 @@ Set `months.end` in [`config/pipeline.yaml`](config/pipeline.yaml) to the new mo
 
 ## Authors
 
-- thanhtan2210 (Phan Thanh Tấn). Contribution: TODO
+Course project for Data Warehouse and Decision Support Systems, HCMUT, semester 2, 2026.
+
+- Phan Thanh Tấn ([thanhtan2210](https://github.com/thanhtan2210)): built the project alone and rebuilt it in 2026 (DuckDB warehouse, XGBoost evaluation, Streamlit app).

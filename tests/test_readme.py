@@ -37,3 +37,10 @@ def test_er_diagram_columns_match_the_fact_table_ddl():
     ddl = (paths.SQL_DIR / "schema.sql").read_text(encoding="utf-8")
     in_ddl = re.findall(r"^\s+(\w+)\s+(TIMESTAMP|INTEGER|TINYINT)\s+NOT NULL", ddl, flags=re.MULTILINE)
     assert in_diagram == [(kind, name) for name, kind in in_ddl]
+
+
+def test_every_image_shown_in_the_readme_exists():
+    images = re.findall(r"!\[[^\]]*\]\(([^)]+)\)", README)
+    assert images, "the README is expected to show screenshots"
+    for image in images:
+        assert (paths.ROOT / image).is_file(), image
