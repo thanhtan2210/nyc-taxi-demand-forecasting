@@ -19,6 +19,8 @@ TODO: link
 
 ## Results
 
+![Forecast page of the Streamlit app](docs/images/forecast.png)
+
 ### Forecast accuracy
 
 Produced by `python -m src.train` → [`models/metrics.json`](models/metrics.json).
@@ -57,18 +59,36 @@ Produced by `python -m src.warehouse` → [`reports/data_quality.json`](reports/
 | fhvhv | 290,155,733 | 0 | 0 | 14,212 | 290,141,521 | 99.995% |
 | All | 376,425,148 | 465 | 25,472,687 | 147,137 | 350,804,859 | 93.194% |
 
+## The app
+
+![Patterns page of the Streamlit app](docs/images/patterns.png)
+
+The app reads only the files committed to this repository: it needs no database and no model, and the tests run without a network connection (the map background tiles are loaded by the browser).
+
 ## How it works
 
 ```text
 TLC parquet (URL) → DuckDB star schema → hourly zone mart → XGBoost vs seasonal-naive → Streamlit / Power BI
 ```
 
+Data sources:
+
+- Trip records: the public NYC TLC parquet files, `https://d37ci6vzurychx.cloudfront.net/trip-data/{service}_tripdata_{YYYY-MM}.parquet`.
+- Zone names: `https://d37ci6vzurychx.cloudfront.net/misc/taxi_zone_lookup.csv`.
+- Zone boundaries for the maps: the TLC taxi zone shapefile, `https://d37ci6vzurychx.cloudfront.net/misc/taxi_zones.zip`, converted once to WGS84 GeoJSON with pyshp and pyproj by [`scripts/fetch_zone_shapes.py`](scripts/fetch_zone_shapes.py) (`requirements-geo.txt`; not needed to run the app or the tests).
+
+The Streamlit app has three pages:
+
+- **Overview**: totals, how the mart reconciles with the source files, trips per day by service and a map of average trips per hour by zone.
+- **Patterns**: weekday by hour heatmap, monthly trend and service mix by borough, unusual days and a per-zone explorer.
+- **Forecast**: backtest of XGBoost against the baseline for a chosen week, accuracy tables, error by hour of day, an error map by zone and the largest misses.
+
 Tech stack:
 
 1. **DuckDB** (SQL in [`sql/`](sql/)) reads two columns of each parquet file over HTTP and builds the star schema and the mart.
 2. **pandas / pyarrow** for features and evaluation.
 3. **XGBoost** for the single global model.
-4. **Streamlit + Plotly** for the two-page app (Overview, Forecast backtest).
+4. **Streamlit + Plotly** for the three-page app.
 5. **Power BI** on the same mart files, see [`docs/powerbi.md`](docs/powerbi.md).
 6. **GitHub Actions** runs the tests and can rebuild one month to compare it with the committed mart.
 
@@ -91,6 +111,7 @@ Tests: `pytest -q` (no network needed).
 - **The tree limit was reached.** The selected model stopped at 599 of at most 600 trees, so it was still improving. The limit was fixed before training and not raised afterwards, because the test months had already been used.
 - **Weather did not help and is not used.** Observed temperature and precipitation (a perfect "oracle" forecast) gave a validation MAE of 12.65 against 12.52 without them, so the final model has no weather features.
 - **Low-volume zones are poorly predicted in relative terms.** EWR (one zone, about 1.4 trips per hour) has a WAPE of 75% to 81% for XGBoost.
+- **Two days are far below normal and are left in the data.** 2026-01-25 reached 45.1% and 2026-02-23 reached 24.3% of the median of the same weekday in the four weeks before and after ([`reports/unusual_days.csv`](reports/unusual_days.csv), from `python scripts/unusual_days.py`). All four services fall on both days. No cause is attributed, and both days are part of the training period.
 - **Daylight saving time.** Timestamps are New York wall-clock time: the hour 01:00 on 2025-11-02 holds two real hours and 02:00 on 2026-03-08 is almost empty. Both are left as they are.
 - **This is a backtest, not a live forecast.** The model predicts one hour ahead from the actual demand of the previous hours; the app replays stored predictions.
 - **The TLC CDN throttles clients.** After about 20 files in a row it answers HTTP 403 for a few minutes; the warehouse build waits and retries.
