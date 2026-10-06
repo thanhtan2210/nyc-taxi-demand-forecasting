@@ -226,3 +226,51 @@ def test_zone_kpis(mart):
     assert kpis["peak_hour_avg_trips"] == 44
     assert kpis["total_trips"] == 70 * (23 * 20 + 44)
     assert kpis["avg_trips_per_hour"] == pytest.approx((23 * 20 + 44) / 24)
+
+
+def make_backtest():
+    """Two zones over two days. Zone 1 is busy, zone 2 averages 2 trips per hour."""
+    hours = pd.date_range("2026-05-01", periods=48, freq="h")
+    busy = pd.DataFrame({"hour": hours, "zone_id": 1, "actual": 100.0, "baseline": 90.0, "xgb": 104.0})
+    quiet = pd.DataFrame({"hour": hours, "zone_id": 2, "actual": 2.0, "baseline": 4.0, "xgb": 3.0})
+    return pd.concat([busy, quiet], ignore_index=True)
+
+
+def test_mae_by_hour_of_day():
+    backtest = make_backtest()
+    backtest.loc[(backtest["zone_id"] == 1) & (backtest["hour"].dt.hour == 9), "xgb"] = 130.0
+    table = analytics.mae_by_hour_of_day(backtest).set_index("hour_of_day")
+    assert len(table) == 24
+    assert table.loc[0, "mae_baseline"] == pytest.approx((10 + 2) / 2)
+    assert table.loc[0, "mae_xgboost"] == pytest.approx((4 + 1) / 2)
+    assert table.loc[9, "mae_xgboost"] == pytest.approx((30 + 1) / 2)
+    # one zone only
+    busy = analytics.mae_by_hour_of_day(backtest[backtest["zone_id"] == 1]).set_index("hour_of_day")
+    assert busy.loc[0, "mae_xgboost"] == pytest.approx(4)
+
+
+def test_zone_errors_hides_wape_below_five_trips_per_hour():
+    table = analytics.zone_errors(make_backtest()).set_index("zone_id")
+    assert table.loc[1, "mean_actual"] == 100
+    assert table.loc[1, "mae_xgboost"] == pytest.approx(4) and table.loc[1, "mae_baseline"] == pytest.approx(10)
+    assert table.loc[1, "wape_xgboost"] == pytest.approx(4.0)
+    assert bool(table.loc[1, "stable"])
+    # zone 2 averages 2 trips per hour: MAE is kept, the percentage is not
+    assert not bool(table.loc[2, "stable"])
+    assert np.isnan(table.loc[2, "wape_xgboost"])
+    assert table.loc[2, "mae_xgboost"] == pytest.approx(1)
+    # the threshold is inclusive and configurable
+    assert analytics.zone_errors(make_backtest(), min_avg_trips=2).set_index("zone_id").loc[2, "wape_xgboost"] == pytest.approx(50.0)
+    assert analytics.MIN_TRIPS_FOR_WAPE == 5
+
+
+def test_largest_misses_are_sorted_by_absolute_error():
+    backtest = make_backtest()
+    backtest.loc[5, "xgb"] = 400.0   # +300 over actual
+    backtest.loc[60, "xgb"] = 2.0    # exact, never listed first
+    backtest.loc[20, "xgb"] = 0.0    # -100 under actual
+    top = analytics.largest_misses(backtest, n=3)
+    assert top["error"].tolist() == [300.0, -100.0, 4.0]
+    assert top.loc[0, "hour"] == pd.Timestamp("2026-05-01 05:00") and top.loc[0, "zone_id"] == 1
+    assert top.columns.tolist() == ["hour", "zone_id", "actual", "baseline", "xgb", "error"]
+    assert len(analytics.largest_misses(backtest)) == 10

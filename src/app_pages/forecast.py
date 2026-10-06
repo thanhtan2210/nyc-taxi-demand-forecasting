@@ -63,7 +63,7 @@ for name, period in metrics["periods"].items():
         "Zone-hours": period["n_rows"],
         "MAE baseline": period["baseline"]["mae"],
         "MAE XGBoost": period["xgboost"]["mae"],
-        "MAE difference [95% CI]": f"{boot['mae_diff_xgb_minus_baseline']:.2f} [{boot['ci95_low']:.2f}, {boot['ci95_high']:.2f}]",
+        "MAE diff [95% CI]": f"{boot['mae_diff_xgb_minus_baseline']:.2f} [{boot['ci95_low']:.2f}, {boot['ci95_high']:.2f}]",
         "RMSE baseline": period["baseline"]["rmse"],
         "RMSE XGBoost": period["xgboost"]["rmse"],
         "WAPE baseline (%)": 100 * period["baseline"]["wape"],
@@ -74,7 +74,7 @@ numeric = table.select_dtypes("float").columns
 st.dataframe(table.style.format({c: "{:.2f}" for c in numeric} | {"Zone-hours": "{:,}"}),
              width="stretch", hide_index=True)
 boot = metrics["periods"]["validation"]["bootstrap"]
-st.caption(f"MAE and RMSE are in trips per zone-hour. MAE difference = XGBoost minus baseline (negative is "
+st.caption(f"MAE and RMSE are in trips per zone-hour. MAE diff = XGBoost minus baseline (negative is "
            f"better). Confidence interval: paired bootstrap over days, {boot['n_bootstrap']} resamples. "
            "Validation was used to select the model, so its numbers are optimistic. From `models/metrics.json`.")
 
@@ -93,3 +93,58 @@ st.dataframe(
     width="stretch", hide_index=True,
 )
 st.caption("From `reports/metrics_by_borough.csv`.")
+
+# --- Diagnostics ------------------------------------------------------------------------
+month_start = pd.Timestamp(month + "-01")
+in_month = (backtest["hour"] >= month_start) & (backtest["hour"] < month_start + pd.offsets.MonthBegin(1))
+month_rows = backtest[in_month]
+selected_rows = selected[in_month.loc[selected.index]]
+
+st.subheader(f"Error by hour of day: {title}, {month_start:%B %Y}")
+by_hour = analytics.mae_by_hour_of_day(selected_rows)
+fig = go.Figure()
+fig.add_scatter(x=by_hour["hour_of_day"], y=by_hour["mae_baseline"], name="Last-week baseline", mode="lines+markers",
+                line=dict(color=BASELINE_COLOR, width=2, dash="dash"), marker=dict(size=8))
+fig.add_scatter(x=by_hour["hour_of_day"], y=by_hour["mae_xgboost"], name="XGBoost", mode="lines+markers",
+                line=dict(color=XGBOOST_COLOR, width=2), marker=dict(size=8))
+fig.update_layout(hovermode="x unified", margin=PLOT_MARGIN, legend=LEGEND_TOP, height=340,
+                  xaxis_title="Hour of day", yaxis_title="MAE (trips per zone-hour)")
+fig.update_xaxes(dtick=1, range=[-0.5, 23.5])
+fig.update_yaxes(rangemode="tozero")
+st.plotly_chart(fig, width="stretch")
+st.caption("Mean absolute error over the zone-hours of the selection, grouped by the hour of the day.")
+with st.expander("Error by hour as a table"):
+    st.dataframe(by_hour.rename(columns={"hour_of_day": "Hour of day", "mae_baseline": "MAE baseline",
+                                         "mae_xgboost": "MAE XGBoost"}).style.format(
+        {"MAE baseline": "{:.2f}", "MAE XGBoost": "{:.2f}"}), width="stretch", hide_index=True)
+
+st.subheader(f"Error by zone, {month_start:%B %Y}")
+zones = analytics.zone_errors(month_rows)
+zones["zone"] = zones["zone_id"].map(labels)
+unstable = int((~zones["stable"]).sum())
+st.dataframe(
+    zones.sort_values("wape_xgboost", ascending=False, na_position="last")[
+        ["zone", "mean_actual", "wape_xgboost", "mae_xgboost", "mae_baseline"]].rename(columns={
+            "zone": "Zone", "mean_actual": "Mean trips per hour", "wape_xgboost": "WAPE XGBoost (%)",
+            "mae_xgboost": "MAE XGBoost", "mae_baseline": "MAE baseline"}).style.format(
+        {"Mean trips per hour": "{:.1f}", "WAPE XGBoost (%)": "{:.1f}", "MAE XGBoost": "{:.2f}",
+         "MAE baseline": "{:.2f}"}, na_rep=""),
+    width="stretch", hide_index=True, height=320,
+)
+st.caption(f"All zones of the city for the selected month, highest WAPE first. {unstable} zones average fewer than "
+           f"{analytics.MIN_TRIPS_FOR_WAPE} trips per hour: too few trips for a stable percentage error, so their "
+           "WAPE is left empty.")
+
+st.subheader(f"Largest misses: {title}, {month_start:%B %Y}")
+misses = analytics.largest_misses(selected_rows, 10)
+misses["zone"] = misses["zone_id"].map(labels)
+st.dataframe(
+    misses[["hour", "zone", "actual", "baseline", "xgb", "error"]].rename(columns={
+        "hour": "Hour", "zone": "Zone", "actual": "Actual", "baseline": "Baseline", "xgb": "XGBoost",
+        "error": "XGBoost error"}).style.format(
+        {"Hour": "{:%Y-%m-%d %H:%M}", "Actual": "{:,.0f}", "Baseline": "{:,.0f}", "XGBoost": "{:,.1f}",
+         "XGBoost error": "{:+,.1f}"}),
+    width="stretch", hide_index=True,
+)
+st.caption(f"The {len(misses)} zone-hours of the selection where XGBoost was furthest from the actual value "
+           "(error = XGBoost minus actual). No cause is attributed.")

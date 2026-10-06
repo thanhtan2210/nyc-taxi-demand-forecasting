@@ -60,8 +60,14 @@ def test_forecast_page_renders_and_reacts_to_selection():
     assert at.selectbox[0].options == ["2026-05", "2026-06", "2026-07"]
     assert len(at.selectbox[2].options) == 5  # May 2026 in seven-day windows
     assert at.selectbox[2].index == 0         # the first week is the default
-    assert len(at.get("plotly_chart")) == 1
-    assert len(at.dataframe) == 3  # hourly values, accuracy by period, accuracy by borough
+    assert len(at.get("plotly_chart")) == 2  # backtest lines, error by hour of day
+    # hourly values, accuracy by period, accuracy by borough, error by hour, error by zone, largest misses
+    assert len(at.dataframe) == 6
+    assert [s.value.split(":")[0].split(",")[0] for s in at.subheader] == [
+        "Manhattan", "Accuracy by period", "Accuracy by borough", "Error by hour of day", "Error by zone",
+        "Largest misses"]
+    assert any("too few trips for a stable percentage error" in c.value for c in at.caption)
+    assert any("No cause is attributed" in c.value for c in at.caption)
     assert any("not a live forecast" in c.value for c in at.caption)
     assert any("trips per zone-hour" in c.value for c in at.caption)
 

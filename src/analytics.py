@@ -16,6 +16,8 @@ TRIP_COLUMNS = ["trips_total"] + SERVICE_COLUMNS
 WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 # A day is unusual below 60% or above 140% of the median of the same weekday, 4 weeks either side.
 UNUSUAL_LOW, UNUSUAL_HIGH, UNUSUAL_WEEKS = 0.6, 1.4, 4
+# Below this mean volume a percentage error is too noisy to show.
+MIN_TRIPS_FOR_WAPE = 5
 DROP_REASONS = {
     "rows_outside_month": "with a pickup time outside the month",
     "rows_zone_null": "without a pickup zone",
@@ -201,3 +203,46 @@ def backtest_series(backtest, start, end):
     """Hourly actual, baseline and XGBoost between start and end, summed over the given rows."""
     window = backtest[(backtest["hour"] >= start) & (backtest["hour"] < end)]
     return window.groupby("hour")[["actual", "baseline", "xgb"]].sum().reset_index()
+
+
+# --- Forecast diagnostics ---------------------------------------------------------------
+
+def mae_by_hour_of_day(rows):
+    """MAE of the baseline and of XGBoost for each hour of the day, over the given zone-hours."""
+    errors = pd.DataFrame({
+        "hour_of_day": rows["hour"].dt.hour.to_numpy(),
+        "mae_baseline": (rows["baseline"] - rows["actual"]).abs().to_numpy(),
+        "mae_xgboost": (rows["xgb"] - rows["actual"]).abs().to_numpy(),
+    })
+    return errors.groupby("hour_of_day")[["mae_baseline", "mae_xgboost"]].mean().reset_index()
+
+
+def zone_errors(rows, min_avg_trips=MIN_TRIPS_FOR_WAPE):
+    """Per-zone error of both models over the given zone-hours.
+
+    WAPE is a percentage of the zone's own volume, so it is only reported (`stable`) for zones
+    that average at least `min_avg_trips` trips per hour; below that it is NaN.
+    """
+    frame = pd.DataFrame({
+        "zone_id": rows["zone_id"].to_numpy(),
+        "actual": rows["actual"].to_numpy(dtype=float),
+        "abs_baseline": (rows["baseline"] - rows["actual"]).abs().to_numpy(dtype=float),
+        "abs_xgboost": (rows["xgb"] - rows["actual"]).abs().to_numpy(dtype=float),
+    })
+    grouped = frame.groupby("zone_id")
+    out = pd.DataFrame({
+        "mean_actual": grouped["actual"].mean(),
+        "mae_baseline": grouped["abs_baseline"].mean(),
+        "mae_xgboost": grouped["abs_xgboost"].mean(),
+    })
+    out["stable"] = out["mean_actual"] >= min_avg_trips
+    out["wape_xgboost"] = (100 * grouped["abs_xgboost"].sum() / grouped["actual"].sum()).where(out["stable"])
+    return out.reset_index()
+
+
+def largest_misses(rows, n=10):
+    """The n zone-hours where XGBoost was furthest from the actual value."""
+    out = rows[["hour", "zone_id", "actual", "baseline", "xgb"]].copy()
+    out["error"] = out["xgb"] - out["actual"]
+    order = out["error"].abs().sort_values(ascending=False, kind="stable").index[:n]
+    return out.loc[order].reset_index(drop=True)
