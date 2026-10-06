@@ -67,8 +67,67 @@ The app reads only the files committed to this repository: it needs no database 
 
 ## How it works
 
-```text
-TLC parquet (URL) → DuckDB star schema → hourly zone mart → XGBoost vs seasonal-naive → Streamlit / Power BI
+```mermaid
+flowchart LR
+    trips["TLC trip parquet (URL)"] --> duckdb["DuckDB (sql/)"]
+    lookup["Taxi zone lookup (URL)"] --> duckdb
+    duckdb --> star["Star schema"]
+    star --> mart["Hourly zone mart (data/mart/)"]
+    mart --> features["Features"]
+    features --> model["XGBoost vs last-week baseline"]
+    model --> outputs["models/ + reports/"]
+    outputs --> app["Streamlit (Overview, Patterns, Forecast)"]
+    mart --> app
+    shapefile["TLC zone shapefile (URL)"] --> convert["scripts.fetch_zone_shapes"]
+    convert --> geojson["taxi_zones.geojson"]
+    geojson --> app
+```
+
+The warehouse is a star schema in a local DuckDB file; the mart is derived from it and is the only part committed to the repository. The keys below are logical: the tables declare no constraints.
+
+```mermaid
+erDiagram
+    dim_zone ||--o{ fact_pickups_hourly : "zone_id"
+    dim_service ||--o{ fact_pickups_hourly : "service_id"
+    dim_hour ||--o{ fact_pickups_hourly : "hour"
+    fact_pickups_hourly ||--o{ mart_demand_hourly : "summed per hour and zone"
+    dim_zone ||--o{ mart_demand_hourly : "zone_id, borough"
+    dim_hour ||--o{ mart_demand_hourly : "complete hour grid"
+
+    dim_zone {
+        INTEGER zone_id PK
+        VARCHAR borough
+        VARCHAR zone
+        VARCHAR service_zone
+    }
+    dim_service {
+        TINYINT service_id PK
+        VARCHAR service
+    }
+    dim_hour {
+        TIMESTAMP hour PK
+        DATE date
+        TINYINT hour_of_day
+        TINYINT day_of_week
+        BOOLEAN is_holiday
+        BOOLEAN is_dst_transition
+    }
+    fact_pickups_hourly {
+        TIMESTAMP hour FK
+        INTEGER zone_id FK
+        TINYINT service_id FK
+        INTEGER trips
+    }
+    mart_demand_hourly {
+        TIMESTAMP hour
+        INTEGER zone_id
+        VARCHAR borough
+        INTEGER trips_total
+        INTEGER trips_yellow
+        INTEGER trips_green
+        INTEGER trips_fhv
+        INTEGER trips_fhvhv
+    }
 ```
 
 Data sources:
@@ -102,6 +161,10 @@ streamlit run app.py
 ```
 
 Tests: `pip install -r requirements-dev.txt`, then `pytest -q` (no network needed).
+
+### Adding a new month
+
+Set `months.end` in [`config/pipeline.yaml`](config/pipeline.yaml) to the new month and run `python -m src.warehouse --months YYYY-MM`; the app reads every partition found in the mart, so the new month appears without any other change. Run `python -m src.train` again only if the evaluation split should change, after updating `split` in the same config file.
 
 ## Limitations
 
