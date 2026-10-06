@@ -23,6 +23,8 @@ from . import paths
 from .config import load_config, month_range, parse_months
 from .timeutils import hour_calendar, hours_of_months, month_bounds
 
+QUALITY_KEYS = ["service", "month", "rows_read", "rows_outside_month", "rows_zone_null", "rows_zone_264_265",
+                "rows_zone_out_of_range", "rows_in_mart"]
 HTTP_ATTEMPTS = 4
 HTTP_RETRY_WAIT_SECONDS = 60
 
@@ -118,40 +120,62 @@ def write_mart_month(con, month, mart_dir):
     return out_dir / "part.parquet"
 
 
-def update_quality(quality_path, entries, cfg):
-    """Merges new (service, month) entries into the quality report, replacing older ones."""
-    quality_path = Path(quality_path)
+def merge_entries(path, entries, cfg, keep):
+    """Merges new (service, month) entries into the entries already in `path`, keeping only `keep` keys."""
     merged = {}
-    if quality_path.exists():
-        for e in json.loads(quality_path.read_text(encoding="utf-8"))["entries"]:
+    if Path(path).exists():
+        for e in json.loads(Path(path).read_text(encoding="utf-8"))["entries"]:
             merged[(e["month"], e["service"])] = e
     for e in entries:
         merged[(e["month"], e["service"])] = e
     order = list(cfg["services"])
+    rows = sorted(merged.values(), key=lambda e: (e["month"], order.index(e["service"])))
+    return [{k: e[k] for k in keep if k in e} for e in rows]
+
+
+def update_quality(quality_path, timings_path, entries, cfg):
+    """Writes the row accounting to the quality report and the wall-clock seconds to the timings file.
+
+    The quality report only holds counts, so rebuilding a month gives the same file again. The
+    timings change on every run and go to a separate file that is not committed.
+    """
+    quality_path, timings_path = Path(quality_path), Path(timings_path)
+    environment = {
+        "processor": platform.processor(),
+        "logical_cpus": os.cpu_count(),
+        "duckdb": duckdb.__version__,
+        "duckdb_threads": int(cfg["n_jobs"]),
+        "duckdb_memory_limit": cfg["duckdb_memory_limit"],
+    }
+    timings_path.parent.mkdir(parents=True, exist_ok=True)
+    timings_path.write_text(json.dumps({
+        "generated_by": "python -m src.warehouse",
+        "notes": ["seconds: wall time to scan the two columns over HTTP and aggregate them, per file."],
+        "environment": environment,
+        "entries": merge_entries(timings_path, entries, cfg, keep=["service", "month", "seconds"]),
+    }, indent=2) + "\n", encoding="utf-8")
     report = {
         "generated_by": "python -m src.warehouse",
         "notes": [
             "rows_read = rows_outside_month + rows_zone_null + rows_zone_264_265 + rows_zone_out_of_range + rows_in_mart.",
             "rows_outside_month: pickup timestamp missing or not inside [first day of month, first day of next month).",
             "The zone columns count in-month rows only. Zones 264 (Unknown) and 265 (Outside of NYC) are kept in the fact table but excluded from the mart.",
-            "seconds: wall time to scan the two columns over HTTP and aggregate them on the machine below.",
         ],
-        "environment": {
-            "processor": platform.processor(),
-            "logical_cpus": os.cpu_count(),
-            "duckdb": duckdb.__version__,
-            "duckdb_threads": int(cfg["n_jobs"]),
-            "duckdb_memory_limit": cfg["duckdb_memory_limit"],
-        },
-        "entries": sorted(merged.values(), key=lambda e: (e["month"], order.index(e["service"]))),
+        "environment": environment,
+        "entries": merge_entries(quality_path, entries, cfg, keep=QUALITY_KEYS),
     }
     quality_path.parent.mkdir(parents=True, exist_ok=True)
     quality_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
 
 
 def run(months, cfg, db_path=paths.WAREHOUSE_DB, mart_dir=paths.DEMAND_MART, quality_path=paths.DATA_QUALITY,
-        force=False):
-    """Builds the requested months and returns the list of months that were (re)built."""
+        force=False, timings_path=None):
+    """Builds the requested months and returns the list of months that were (re)built.
+
+    The timings file defaults to warehouse_timings.json next to the quality report.
+    """
+    if timings_path is None:
+        timings_path = Path(quality_path).with_name(paths.WAREHOUSE_TIMINGS.name)
     todo = [m for m in months if force or not (Path(mart_dir) / f"month={m}" / "part.parquet").exists()]
     for month in months:
         if month not in todo:
@@ -173,7 +197,7 @@ def run(months, cfg, db_path=paths.WAREHOUSE_DB, mart_dir=paths.DEMAND_MART, qua
                 print(f"[load] {month} {service}: {entry['rows_read']:,} rows read, "
                       f"{entry['rows_in_mart']:,} in mart, {entry['seconds']}s", flush=True)
             part = write_mart_month(con, month, mart_dir)
-            update_quality(quality_path, entries, cfg)
+            update_quality(quality_path, timings_path, entries, cfg)
             print(f"[mart] {month}: {part.stat().st_size / 2**20:.2f} MB", flush=True)
     finally:
         con.close()

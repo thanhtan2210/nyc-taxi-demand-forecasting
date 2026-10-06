@@ -6,12 +6,27 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from src import paths
 from src.config import load_config
 from src.features import BASE_FEATURES
 from src.timeutils import month_bounds
 from src.train import error_metrics, paired_day_bootstrap, run
 
 MONTHS = ["2026-01", "2026-02", "2026-03", "2026-04", "2026-05"]
+
+
+def time_keys(node):
+    """Every dict key, at any depth, whose name mentions a time measurement."""
+    found = []
+    if isinstance(node, dict):
+        for key, value in node.items():
+            if any(word in key.lower() for word in ("second", "time", "duration")):
+                found.append(key)
+            found += time_keys(value)
+    elif isinstance(node, list):
+        for value in node:
+            found += time_keys(value)
+    return found
 
 
 @pytest.fixture(scope="module")
@@ -74,6 +89,21 @@ def test_outputs_are_written_and_consistent(trained):
     saved = joblib.load(tmp / "models" / "xgb_demand.joblib")
     assert saved["features"] == metrics["final_model"]["features"]
     assert set(BASE_FEATURES) <= set(saved["features"])
+
+
+def test_timings_are_written_to_their_own_file_not_to_the_metrics(trained):
+    tmp, metrics = trained["tmp"], trained["metrics"]
+    assert not time_keys(metrics)
+    timings = json.loads((tmp / "reports" / "train_timings.json").read_text(encoding="utf-8"))
+    assert set(timings["seconds"]["candidates_seconds"]) == {"depth3", "depth5"}
+    assert {"build_features_seconds", "search_seconds", "weather_ablation_seconds", "final_fit_seconds"} <= set(timings["seconds"])
+    assert timings["environment"] == metrics["environment"]
+
+
+def test_committed_results_hold_no_wall_clock_fields():
+    """Committed result files must be identical after a re-run, so they cannot carry timings."""
+    for path in (paths.METRICS, paths.DATA_QUALITY):
+        assert not time_keys(json.loads(path.read_text(encoding="utf-8"))), path
 
 
 def test_selection_uses_validation_only(trained):

@@ -148,6 +148,31 @@ def test_dim_zone_is_exported_next_to_the_mart(built):
     assert zones.loc[zones["zone_id"] == 2, "zone"].item() == "Jamaica Bay"
 
 
+def test_quality_report_is_deterministic_and_timings_go_to_their_own_file(built):
+    quality_path = built["paths"]["quality_path"]
+    first = quality_path.read_text(encoding="utf-8")
+    assert all("seconds" not in entry for entry in json.loads(first)["entries"])
+    timings = json.loads(quality_path.with_name("warehouse_timings.json").read_text(encoding="utf-8"))
+    assert [(e["service"], e["month"]) for e in timings["entries"]] == [(s, MONTH) for s in built["cfg"]["services"]]
+    assert all(set(e) == {"service", "month", "seconds"} for e in timings["entries"])
+    # rebuilding the month rewrites the quality report byte for byte
+    run([MONTH], built["cfg"], force=True, **built["paths"])
+    assert quality_path.read_text(encoding="utf-8") == first
+
+
+def test_old_quality_entries_lose_their_seconds_when_the_report_is_rewritten(built):
+    quality_path = built["paths"]["quality_path"]
+    report = json.loads(quality_path.read_text(encoding="utf-8"))
+    report["entries"].append({"service": "yellow", "month": "2026-05", "rows_read": 5, "rows_outside_month": 0,
+                              "rows_zone_null": 0, "rows_zone_264_265": 0, "rows_zone_out_of_range": 0,
+                              "rows_in_mart": 5, "seconds": 1.5})
+    quality_path.write_text(json.dumps(report), encoding="utf-8")
+    run([MONTH], built["cfg"], force=True, **built["paths"])
+    entries = json.loads(quality_path.read_text(encoding="utf-8"))["entries"]
+    assert len(entries) == 5 and all("seconds" not in e for e in entries)
+    assert entries[0]["month"] == "2026-05" and entries[0]["rows_in_mart"] == 5
+
+
 def test_existing_month_is_skipped_unless_forced(built):
     assert built["built_months"] == [MONTH]
     assert run([MONTH], built["cfg"], **built["paths"]) == []

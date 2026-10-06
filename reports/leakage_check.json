@@ -1,5 +1,5 @@
 {
-  "generated_by": "python scripts/leakage_check.py",
+  "generated_by": "python -m scripts.leakage_check",
   "scope": "validation month only; the test months are not read by the model here",
   "lag_features_vs_sql_max_abs_diff": {
     "lag_1": 0.0,

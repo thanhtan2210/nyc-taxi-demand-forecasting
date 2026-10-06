@@ -1,5 +1,5 @@
 {
-  "generated_by": "python scripts/double_count_check.py",
+  "generated_by": "python -m scripts.double_count_check",
   "day": "2026-06-10",
   "match_rule": "same pickup zone, same drop-off zone, |pickup diff| <= 120s and |drop-off diff| <= 120s",
   "fhvhv_license": "HV0003",

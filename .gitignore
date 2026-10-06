@@ -6,6 +6,10 @@
 # Local DuckDB warehouse (rebuilt by `python -m src.warehouse`)
 warehouse/
 
+# Wall-clock timings: they change on every run
+reports/train_timings.json
+reports/warehouse_timings.json
+
 # Environments
 .env
 .venv/

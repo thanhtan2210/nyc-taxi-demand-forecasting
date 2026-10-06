@@ -46,4 +46,5 @@ jobs:
           path: |
             rebuilt/compare.json
             rebuilt/data_quality.json
+            rebuilt/warehouse_timings.json
             rebuilt/mart/

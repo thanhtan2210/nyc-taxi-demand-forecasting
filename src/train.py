@@ -15,6 +15,7 @@ import os
 import platform
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
 
 import joblib
@@ -150,7 +151,7 @@ def scored_frame(part, predictions):
 def run(cfg, mart_dir=paths.DEMAND_MART, weather_path=paths.WEATHER, models_dir=paths.MODELS_DIR,
         reports_dir=paths.REPORTS_DIR, param_grid=PARAM_GRID, max_rounds=MAX_ROUNDS):
     seed = int(cfg["random_state"])
-    timings = {}
+    timings = {}  # wall-clock seconds; written to train_timings.json, never to metrics.json
 
     t0 = time.perf_counter()
     weather = pd.read_csv(weather_path, parse_dates=["hour"])
@@ -187,8 +188,8 @@ def run(cfg, mart_dir=paths.DEMAND_MART, weather_path=paths.WEATHER, models_dir=
             "best_iteration": int(model.best_iteration),
             "hit_round_limit": bool(model.best_iteration + 1 >= max_rounds),
             "validation_mae": val_mae,
-            "seconds": round(time.perf_counter() - t1, 1),
         })
+        timings.setdefault("candidates_seconds", {})[params["name"]] = round(time.perf_counter() - t1, 1)
         print(f"[search] {params['name']}: val MAE {val_mae:.4f} at {model.best_iteration + 1} trees", flush=True)
     timings["search_seconds"] = round(time.perf_counter() - t0, 1)
     best = min(candidates, key=lambda c: c["validation_mae"])
@@ -231,6 +232,13 @@ def run(cfg, mart_dir=paths.DEMAND_MART, weather_path=paths.WEATHER, models_dir=
     backtest.drop(columns="borough").to_parquet(reports_dir / "backtest_hourly.parquet", index=False, compression="zstd")
     borough_table(scored).to_csv(reports_dir / "metrics_by_borough.csv", index=False, lineterminator="\n")
 
+    environment = {
+        "processor": platform.processor(),
+        "logical_cpus": os.cpu_count(),
+        "n_jobs": int(cfg["n_jobs"]),
+        "python": platform.python_version(),
+        "xgboost": xgb.__version__,
+    }
     metrics = {
         "generated_by": "python -m src.train",
         "target": "trips_total: pickups per zone and hour, summed over yellow, green, fhv and fhvhv",
@@ -266,16 +274,16 @@ def run(cfg, mart_dir=paths.DEMAND_MART, weather_path=paths.WEATHER, models_dir=
             "size_mb": round(model_mb, 2),
         },
         "periods": periods,
-        "timings": timings,
-        "environment": {
-            "processor": platform.processor(),
-            "logical_cpus": os.cpu_count(),
-            "n_jobs": int(cfg["n_jobs"]),
-            "python": platform.python_version(),
-            "xgboost": xgb.__version__,
-        },
+        "environment": environment,
     }
     (models_dir / "metrics.json").write_text(json.dumps(metrics, indent=2) + "\n", encoding="utf-8")
+    # Timings differ on every run, so they live in their own file, which is not committed.
+    (reports_dir / paths.TRAIN_TIMINGS.name).write_text(json.dumps({
+        "generated_by": "python -m src.train",
+        "measured_at": datetime.now().isoformat(timespec="seconds"),
+        "environment": environment,
+        "seconds": timings,
+    }, indent=2) + "\n", encoding="utf-8")
     return metrics
 
 

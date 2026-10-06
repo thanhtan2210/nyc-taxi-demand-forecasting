@@ -26,3 +26,7 @@ BOROUGH_METRICS = REPORTS_DIR / "metrics_by_borough.csv"
 LEAKAGE_CHECK = REPORTS_DIR / "leakage_check.json"
 DOUBLE_COUNT_CHECK = REPORTS_DIR / "double_count_check.json"
 UNUSUAL_DAYS = REPORTS_DIR / "unusual_days.csv"
+
+# Wall-clock timings change on every run, so they are written next to the reports but never committed
+TRAIN_TIMINGS = REPORTS_DIR / "train_timings.json"
+WAREHOUSE_TIMINGS = REPORTS_DIR / "warehouse_timings.json"

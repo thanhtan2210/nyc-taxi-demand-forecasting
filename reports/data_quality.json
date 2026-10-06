@@ -3,8 +3,7 @@
   "notes": [
     "rows_read = rows_outside_month + rows_zone_null + rows_zone_264_265 + rows_zone_out_of_range + rows_in_mart.",
     "rows_outside_month: pickup timestamp missing or not inside [first day of month, first day of next month).",
-    "The zone columns count in-month rows only. Zones 264 (Unknown) and 265 (Outside of NYC) are kept in the fact table but excluded from the mart.",
-    "seconds: wall time to scan the two columns over HTTP and aggregate them on the machine below."
+    "The zone columns count in-month rows only. Zones 264 (Unknown) and 265 (Outside of NYC) are kept in the fact table but excluded from the mart."
   ],
   "environment": {
     "processor": "Intel64 Family 6 Model 158 Stepping 10, GenuineIntel",
@@ -22,8 +21,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 8595,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 4314345,
-      "seconds": 1.9
+      "rows_in_mart": 4314345
     },
     {
       "service": "green",
@@ -33,8 +31,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 159,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 49215,
-      "seconds": 1.2
+      "rows_in_mart": 49215
     },
     {
       "service": "fhv",
@@ -44,8 +41,7 @@
       "rows_zone_null": 1797154,
       "rows_zone_264_265": 2619,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 431958,
-      "seconds": 13.0
+      "rows_in_mart": 431958
     },
     {
       "service": "fhvhv",
@@ -55,8 +51,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 913,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 19867096,
-      "seconds": 2.9
+      "rows_in_mart": 19867096
     },
     {
       "service": "yellow",
@@ -66,8 +61,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 8366,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 3890590,
-      "seconds": 1.6
+      "rows_in_mart": 3890590
     },
     {
       "service": "green",
@@ -77,8 +71,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 160,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 48032,
-      "seconds": 4.1
+      "rows_in_mart": 48032
     },
     {
       "service": "fhv",
@@ -88,8 +81,7 @@
       "rows_zone_null": 1801077,
       "rows_zone_264_265": 2119,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 384340,
-      "seconds": 10.7
+      "rows_in_mart": 384340
     },
     {
       "service": "fhvhv",
@@ -99,8 +91,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 933,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 19652079,
-      "seconds": 3.6
+      "rows_in_mart": 19652079
     },
     {
       "service": "yellow",
@@ -110,8 +101,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 7607,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 3566467,
-      "seconds": 1.5
+      "rows_in_mart": 3566467
     },
     {
       "service": "green",
@@ -121,8 +111,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 194,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 46089,
-      "seconds": 4.0
+      "rows_in_mart": 46089
     },
     {
       "service": "fhv",
@@ -132,8 +121,7 @@
       "rows_zone_null": 1897108,
       "rows_zone_264_265": 4077,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 355669,
-      "seconds": 9.2
+      "rows_in_mart": 355669
     },
     {
       "service": "fhvhv",
@@ -143,8 +131,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 878,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 19270583,
-      "seconds": 2.2
+      "rows_in_mart": 19270583
     },
     {
       "service": "yellow",
@@ -154,8 +141,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 8215,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 4242793,
-      "seconds": 1.7
+      "rows_in_mart": 4242793
     },
     {
       "service": "green",
@@ -165,8 +151,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 146,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 48714,
-      "seconds": 1.2
+      "rows_in_mart": 48714
     },
     {
       "service": "fhv",
@@ -176,8 +161,7 @@
       "rows_zone_null": 1743514,
       "rows_zone_264_265": 4363,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 401415,
-      "seconds": 8.7
+      "rows_in_mart": 401415
     },
     {
       "service": "fhvhv",
@@ -187,8 +171,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 822,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 19433819,
-      "seconds": 2.8
+      "rows_in_mart": 19433819
     },
     {
       "service": "yellow",
@@ -198,8 +181,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 8542,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 4420144,
-      "seconds": 1.6
+      "rows_in_mart": 4420144
     },
     {
       "service": "green",
@@ -209,8 +191,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 174,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 49221,
-      "seconds": 3.3
+      "rows_in_mart": 49221
     },
     {
       "service": "fhv",
@@ -220,8 +201,7 @@
       "rows_zone_null": 2029441,
       "rows_zone_264_265": 2151,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 415023,
-      "seconds": 7.5
+      "rows_in_mart": 415023
     },
     {
       "service": "fhvhv",
@@ -231,8 +211,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 833,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 21307868,
-      "seconds": 2.2
+      "rows_in_mart": 21307868
     },
     {
       "service": "yellow",
@@ -242,8 +221,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 8035,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 4173385,
-      "seconds": 0.8
+      "rows_in_mart": 4173385
     },
     {
       "service": "green",
@@ -253,8 +231,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 116,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 46775,
-      "seconds": 0.2
+      "rows_in_mart": 46775
     },
     {
       "service": "fhv",
@@ -264,8 +241,7 @@
       "rows_zone_null": 1895087,
       "rows_zone_264_265": 2371,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 381146,
-      "seconds": 2.9
+      "rows_in_mart": 381146
     },
     {
       "service": "fhvhv",
@@ -275,8 +251,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 961,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 20817279,
-      "seconds": 2.2
+      "rows_in_mart": 20817279
     },
     {
       "service": "yellow",
@@ -286,8 +261,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 7614,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 4297383,
-      "seconds": 0.7
+      "rows_in_mart": 4297383
     },
     {
       "service": "green",
@@ -297,8 +271,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 131,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 48079,
-      "seconds": 0.1
+      "rows_in_mart": 48079
     },
     {
       "service": "fhv",
@@ -308,8 +281,7 @@
       "rows_zone_null": 1559296,
       "rows_zone_264_265": 2244,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 365351,
-      "seconds": 2.8
+      "rows_in_mart": 365351
     },
     {
       "service": "fhvhv",
@@ -319,8 +291,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 1063,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 22107375,
-      "seconds": 2.3
+      "rows_in_mart": 22107375
     },
     {
       "service": "yellow",
@@ -330,8 +301,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 5930,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 3718952,
-      "seconds": 0.8
+      "rows_in_mart": 3718952
     },
     {
       "service": "green",
@@ -341,8 +311,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 130,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 40120,
-      "seconds": 0.4
+      "rows_in_mart": 40120
     },
     {
       "service": "fhv",
@@ -352,8 +321,7 @@
       "rows_zone_null": 1646462,
       "rows_zone_264_265": 855,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 294405,
-      "seconds": 0.4
+      "rows_in_mart": 294405
     },
     {
       "service": "fhvhv",
@@ -363,8 +331,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 1030,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 20939343,
-      "seconds": 14.7
+      "rows_in_mart": 20939343
     },
     {
       "service": "yellow",
@@ -374,8 +341,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 5021,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 3394829,
-      "seconds": 0.7
+      "rows_in_mart": 3394829
     },
     {
       "service": "green",
@@ -385,8 +351,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 124,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 37238,
-      "seconds": 0.6
+      "rows_in_mart": 37238
     },
     {
       "service": "fhv",
@@ -396,8 +361,7 @@
       "rows_zone_null": 1793034,
       "rows_zone_264_265": 1688,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 153807,
-      "seconds": 0.9
+      "rows_in_mart": 153807
     },
     {
       "service": "fhvhv",
@@ -407,8 +371,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 1000,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 19874686,
-      "seconds": 2.0
+      "rows_in_mart": 19874686
     },
     {
       "service": "yellow",
@@ -418,8 +381,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 6249,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 3946183,
-      "seconds": 0.8
+      "rows_in_mart": 3946183
     },
     {
       "service": "green",
@@ -429,8 +391,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 139,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 44060,
-      "seconds": 0.4
+      "rows_in_mart": 44060
     },
     {
       "service": "fhv",
@@ -440,8 +401,7 @@
       "rows_zone_null": 2021238,
       "rows_zone_264_265": 1927,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 337525,
-      "seconds": 4.6
+      "rows_in_mart": 337525
     },
     {
       "service": "fhvhv",
@@ -451,8 +411,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 1091,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 22057267,
-      "seconds": 2.3
+      "rows_in_mart": 22057267
     },
     {
       "service": "yellow",
@@ -462,8 +421,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 6032,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 3825196,
-      "seconds": 1.1
+      "rows_in_mart": 3825196
     },
     {
       "service": "green",
@@ -473,8 +431,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 139,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 44096,
-      "seconds": 0.5
+      "rows_in_mart": 44096
     },
     {
       "service": "fhv",
@@ -484,8 +441,7 @@
       "rows_zone_null": 1783421,
       "rows_zone_264_265": 1693,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 340516,
-      "seconds": 1.1
+      "rows_in_mart": 340516
     },
     {
       "service": "fhvhv",
@@ -495,8 +451,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 1020,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 20994933,
-      "seconds": 2.4
+      "rows_in_mart": 20994933
     },
     {
       "service": "yellow",
@@ -506,8 +461,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 6485,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 4084337,
-      "seconds": 0.7
+      "rows_in_mart": 4084337
     },
     {
       "service": "green",
@@ -517,8 +471,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 164,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 44747,
-      "seconds": 0.5
+      "rows_in_mart": 44747
     },
     {
       "service": "fhv",
@@ -528,8 +481,7 @@
       "rows_zone_null": 2068483,
       "rows_zone_264_265": 1717,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 351219,
-      "seconds": 3.3
+      "rows_in_mart": 351219
     },
     {
       "service": "fhvhv",
@@ -539,8 +491,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 1182,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 22124562,
-      "seconds": 1.5
+      "rows_in_mart": 22124562
     },
     {
       "service": "yellow",
@@ -550,8 +501,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 6569,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 3830662,
-      "seconds": 0.8
+      "rows_in_mart": 3830662
     },
     {
       "service": "green",
@@ -561,8 +511,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 151,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 43999,
-      "seconds": 0.6
+      "rows_in_mart": 43999
     },
     {
       "service": "fhv",
@@ -572,8 +521,7 @@
       "rows_zone_null": 1722118,
       "rows_zone_264_265": 1755,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 168823,
-      "seconds": 1.0
+      "rows_in_mart": 168823
     },
     {
       "service": "fhvhv",
@@ -583,8 +531,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 1241,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 20774627,
-      "seconds": 8.3
+      "rows_in_mart": 20774627
     },
     {
       "service": "yellow",
@@ -594,8 +541,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 6200,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 3523863,
-      "seconds": 0.8
+      "rows_in_mart": 3523863
     },
     {
       "service": "green",
@@ -605,8 +551,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 153,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 41083,
-      "seconds": 0.1
+      "rows_in_mart": 41083
     },
     {
       "service": "fhv",
@@ -616,8 +561,7 @@
       "rows_zone_null": 1715254,
       "rows_zone_264_265": 1806,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 421544,
-      "seconds": 1.0
+      "rows_in_mart": 421544
     },
     {
       "service": "fhvhv",
@@ -627,8 +571,7 @@
       "rows_zone_null": 0,
       "rows_zone_264_265": 1245,
       "rows_zone_out_of_range": 0,
-      "rows_in_mart": 20920004,
-      "seconds": 13.6
+      "rows_in_mart": 20920004
     }
   ]
 }

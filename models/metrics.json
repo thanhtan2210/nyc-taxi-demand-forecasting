@@ -45,8 +45,7 @@
         },
         "best_iteration": 599,
         "hit_round_limit": true,
-        "validation_mae": 13.031504947996662,
-        "seconds": 95.9
+        "validation_mae": 13.031504947996662
       },
       {
         "name": "depth8",
@@ -55,8 +54,7 @@
         },
         "best_iteration": 596,
         "hit_round_limit": false,
-        "validation_mae": 12.652186840889192,
-        "seconds": 104.0
+        "validation_mae": 12.652186840889192
       },
       {
         "name": "depth10",
@@ -65,8 +63,7 @@
         },
         "best_iteration": 368,
         "hit_round_limit": false,
-        "validation_mae": 12.652973533822623,
-        "seconds": 92.4
+        "validation_mae": 12.652973533822623
       },
       {
         "name": "depth8_subsample",
@@ -77,8 +74,7 @@
         },
         "best_iteration": 598,
         "hit_round_limit": false,
-        "validation_mae": 12.858662746764264,
-        "seconds": 103.6
+        "validation_mae": 12.858662746764264
       },
       {
         "name": "depth8_min_child20",
@@ -88,8 +84,7 @@
         },
         "best_iteration": 599,
         "hit_round_limit": true,
-        "validation_mae": 12.69606318152411,
-        "seconds": 84.0
+        "validation_mae": 12.69606318152411
       },
       {
         "name": "depth8_poisson",
@@ -99,8 +94,7 @@
         },
         "best_iteration": 599,
         "hit_round_limit": true,
-        "validation_mae": 12.78570432963874,
-        "seconds": 107.2
+        "validation_mae": 12.78570432963874
       }
     ],
     "selected": "depth8"
@@ -231,12 +225,6 @@
       },
       "leakage_check_required": false
     }
-  },
-  "timings": {
-    "build_features_seconds": 2.6,
-    "search_seconds": 587.1,
-    "weather_ablation_seconds": 85.0,
-    "final_fit_seconds": 86.2
   },
   "environment": {
     "processor": "Intel64 Family 6 Model 158 Stepping 10, GenuineIntel",
