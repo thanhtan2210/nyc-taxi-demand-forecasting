@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 
 import pandas as pd
+import pyarrow.dataset as ds
 import streamlit as st
 
 from src import analytics
@@ -58,13 +59,15 @@ def magnitude_scale():
 @st.cache_data(show_spinner="Reading the demand mart")
 def load_mart():
     """The whole hourly mart, read once per server process."""
-    columns = ["hour", "zone_id", "borough"] + analytics.TRIP_COLUMNS
-    mart = pd.concat(
-        [pd.read_parquet(p, columns=columns) for p in sorted(MART_DIR.glob("month=*/part.parquet"))],
-        ignore_index=True,
-    )
-    mart["borough"] = mart["borough"].astype("category")
+    # Read all partitions into one Arrow table and convert once, to keep peak memory low.
+    # The borough is rebuilt from the zone id as a categorical instead of reading 2.7M strings.
+    files = [str(p) for p in sorted(MART_DIR.glob("month=*/part.parquet"))]
+    table = ds.dataset(files, format="parquet").to_table(columns=["hour", "zone_id"] + analytics.TRIP_COLUMNS)
+    mart = table.to_pandas(self_destruct=True, split_blocks=True)
+    del table
     mart["zone_id"] = mart["zone_id"].astype("int16")
+    borough_of_zone = load_zones().set_index("zone_id")["borough"]
+    mart.insert(2, "borough", mart["zone_id"].map(borough_of_zone).astype("category"))
     return mart
 
 
