@@ -1,6 +1,11 @@
+# Raw trip records are never stored in the repo; only the hourly mart is committed
 dataset/Trip_Record/
-dataset/processed/
 *.parquet
+!data/mart/**/*.parquet
+!reports/*.parquet
+
+# Local DuckDB warehouse (rebuilt by `python -m src.warehouse`)
+warehouse/
 
 # Environments
 .env
@@ -12,21 +17,15 @@ env/
 __pycache__/
 *.py[cod]
 *$py.class
+.pytest_cache/
 
 # Jupyter Notebook
 .ipynb_checkpoints
 */.ipynb_checkpoints/*
 
-# Models
+# Legacy model directory of the old pipeline
 saved_models/
 
 # OS generated files
 desktop.ini
 .DS_Store
-
-# Reports
-etl_report_summary.csv
-etl_report_*.csv
-__pycache__/
-report/
-weather_forecast/
