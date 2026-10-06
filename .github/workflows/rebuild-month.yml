@@ -1,0 +1,49 @@
+name: Rebuild one month
+
+# Rebuilds a single mart partition from the public TLC files and compares it with the
+# committed one. Nothing is committed or pushed; the result is uploaded as an artifact.
+on:
+  workflow_dispatch:
+    inputs:
+      month:
+        description: "Month to rebuild (YYYY-MM)"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    env:
+      MONTH: ${{ inputs.month }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Rebuild the month from the TLC URLs
+        run: >
+          python -m src.warehouse --months "$MONTH" --force
+          --db rebuilt/nyc_taxi.duckdb
+          --mart-dir rebuilt/mart
+          --quality-path rebuilt/data_quality.json
+
+      - name: Compare with the committed partition
+        run: python scripts/compare_partition.py --month "$MONTH" --rebuilt rebuilt/mart --out rebuilt/compare.json
+
+      - name: Upload result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rebuild-${{ inputs.month }}
+          path: |
+            rebuilt/compare.json
+            rebuilt/data_quality.json
+            rebuilt/mart/

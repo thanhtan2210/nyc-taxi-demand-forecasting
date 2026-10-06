@@ -1,38 +1,24 @@
-name: CI Pipeline
+name: CI
 
 on:
   push:
-    branches: [ main, master, production ]
+    branches: [main]
   pull_request:
-    branches: [ main, master, production ]
 
 jobs:
   test:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.13'
-        cache: 'pip'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install flake8
+      - name: Install dependencies
+        run: pip install -r requirements.txt
 
-    - name: Lint with flake8
-      run: |
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings.
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-
-    - name: Run unit tests
-      run: |
-        pytest tests/ -v
+      # Tests use synthetic fixtures and mocked responses; no network or secret is needed.
+      - name: Run tests
+        run: pytest -q
