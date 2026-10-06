@@ -1,0 +1,67 @@
+{
+  "generated_by": "python scripts/double_count_check.py",
+  "day": "2026-06-10",
+  "match_rule": "same pickup zone, same drop-off zone, |pickup diff| <= 120s and |drop-off diff| <= 120s",
+  "fhvhv_license": "HV0003",
+  "fhvhv_trips_in_window": 529187,
+  "yellow_trips": 137898,
+  "yellow_by_request_source": {
+    "null": {
+      "trips": 108722,
+      "matched": 10383,
+      "match_rate": 0.09550045069075257,
+      "ci95": [
+        0.09377103989992826,
+        0.09736897775979103
+      ]
+    },
+    "HV0003": {
+      "trips": 26113,
+      "matched": 2029,
+      "match_rate": 0.07770076207253092,
+      "ci95": [
+        0.07448301612223795,
+        0.0809213801554781
+      ]
+    },
+    "A": {
+      "trips": 2753,
+      "matched": 251,
+      "match_rate": 0.09117326552851435,
+      "ci95": [
+        0.08136578278241918,
+        0.10170722847802398
+      ]
+    },
+    "EH0004": {
+      "trips": 270,
+      "matched": 21,
+      "match_rate": 0.07777777777777778,
+      "ci95": [
+        0.04814814814814815,
+        0.1111111111111111
+      ]
+    },
+    "CC": {
+      "trips": 40,
+      "matched": 2,
+      "match_rate": 0.05,
+      "ci95": [
+        0.0,
+        0.125
+      ]
+    }
+  },
+  "bootstrap": {
+    "n": 1000,
+    "seed": 42,
+    "unit": "yellow trip"
+  },
+  "hv0003_minus_null": {
+    "match_rate_difference": -0.01779968861822165,
+    "ci95": [
+      -0.021573485934920377,
+      -0.014054493521640038
+    ]
+  }
+}
