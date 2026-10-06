@@ -35,6 +35,11 @@ split:
   # Reported separately; June and July 2026 overlap the FIFA World Cup.
   test_months: ["2026-05", "2026-06", "2026-07"]
 
+# Open-Meteo archive point used for the hourly weather (New York City).
+weather:
+  latitude: 40.7128
+  longitude: -74.0060
+
 random_state: 42
 # Threads used by DuckDB and XGBoost.
 n_jobs: 4
