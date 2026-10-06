@@ -1,6 +1,10 @@
 """Smoke tests of the Streamlit app on the committed mart and reports (no network, no model)."""
 import ast
+import base64
+import json
 from pathlib import Path
+
+import numpy as np
 
 from streamlit.testing.v1 import AppTest
 
@@ -10,6 +14,19 @@ TIMEOUT = 120
 
 def open_app():
     return AppTest.from_file(str(ROOT / "app.py"), default_timeout=TIMEOUT).run()
+
+
+def map_traces(at):
+    """The choropleth map traces among the Plotly charts of the page."""
+    specs = [json.loads(chart.proto.spec) for chart in at.get("plotly_chart")]
+    return [trace for spec in specs for trace in spec["data"] if trace["type"] == "choroplethmap"]
+
+
+def decoded(values):
+    """Plotly sends numeric arrays either as lists or as base64 typed arrays."""
+    if isinstance(values, dict):
+        return np.frombuffer(base64.b64decode(values["bdata"]), dtype=values["dtype"]).tolist()
+    return list(values)
 
 
 def test_overview_page_renders():
@@ -22,9 +39,14 @@ def test_overview_page_renders():
     assert any("trips in the TLC source files" in m.value for m in at.markdown)
     assert any("have no pickup zone" in c.value for c in at.caption)
     assert "Source vs mart by service" in [e.label for e in at.expander]
-    assert len(at.get("plotly_chart")) == 4
+    assert len(at.get("plotly_chart")) == 5
     # every chart has a table twin
-    assert sum(e.label.endswith("as a table") for e in at.expander) == 4
+    assert sum(e.label.endswith("as a table") for e in at.expander) == 5
+    # the zone map draws one polygon value per zone of the mart
+    maps = map_traces(at)
+    assert len(maps) == 1
+    assert sorted(decoded(maps[0]["locations"])) == list(range(1, 264))
+    assert any("Zone boundaries: NYC TLC taxi zone shapefile" in c.value for c in at.caption)
 
 
 def test_patterns_page_renders_and_reacts_to_selection():

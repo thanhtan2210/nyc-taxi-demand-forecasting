@@ -69,6 +69,18 @@ def zone_totals(mart, zones):
     return totals.merge(zones[["zone_id", "zone", "borough"]], on="zone_id", how="left")
 
 
+def log10_trips(avg_trips_per_hour):
+    """log10 of mean trips per hour for a map colour; zones below 1 trip per hour are drawn at 0."""
+    return np.log10(np.maximum(np.asarray(avg_trips_per_hour, dtype=float), 1.0))
+
+
+def power_of_ten_ticks(max_value):
+    """Colourbar ticks for a log10 scale: ([0, 1, 2, ...], ["1", "10", "100", ...]) up to max_value."""
+    top = max(1, int(np.ceil(np.log10(max(max_value, 1.0)))))
+    exponents = list(range(top + 1))
+    return exponents, [f"{10 ** e:,}" for e in exponents]
+
+
 def top_zones(zone_table, n=15):
     return zone_table.nlargest(n, "trips_total").reset_index(drop=True)
 

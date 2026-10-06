@@ -1,0 +1,3 @@
+# Only for the one-off conversion in scripts/fetch_zone_shapes.py. Not needed by the app, the tests or CI.
+pyshp==3.1.6
+pyproj==3.8.0

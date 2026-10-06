@@ -4,7 +4,8 @@ import streamlit as st
 
 from src import analytics
 from src.app_data import (
-    LEGEND_TOP, PLOT_MARGIN, SERVICE_COLORS, SERVICE_LABELS, SERVICES, load_quality_entries, overview_tables,
+    BLUE_RAMP, LEGEND_TOP, MAP_VIEW, PLOT_MARGIN, SERVICE_COLORS, SERVICE_LABELS, SERVICES, load_quality_entries,
+    load_zone_shapes, overview_tables,
 )
 
 tables = overview_tables()
@@ -94,6 +95,28 @@ with right:
     with st.expander("Hourly profile as a table"):
         st.dataframe(profile.pivot(index="hour_of_day", columns="day_type", values="trips_per_hour").reset_index(),
                      width="stretch", hide_index=True)
+
+st.subheader("Average trips per hour by zone")
+zone_map = tables["zones"].assign(log_trips=lambda d: analytics.log10_trips(d["avg_trips_per_hour"]))
+ticks, tick_labels = analytics.power_of_ten_ticks(zone_map["avg_trips_per_hour"].max())
+fig = px.choropleth_map(
+    zone_map, geojson=load_zone_shapes(), locations="zone_id", featureidkey="properties.location_id",
+    color="log_trips", color_continuous_scale=BLUE_RAMP[::-1], range_color=(ticks[0], ticks[-1]),
+    custom_data=["zone", "borough", "avg_trips_per_hour", "trips_total"], opacity=0.85, **MAP_VIEW,
+)
+fig.update_traces(
+    marker_line_width=0.5, marker_line_color="#1a1a19",
+    hovertemplate="<b>%{customdata[0]}</b><br>%{customdata[1]}<br>%{customdata[2]:,.1f} trips per hour"
+                  "<br>%{customdata[3]:,} trips in the period<extra></extra>",
+)
+fig.update_layout(margin=PLOT_MARGIN, height=560,
+                  coloraxis_colorbar=dict(title="Trips per hour", tickvals=ticks, ticktext=tick_labels))
+st.plotly_chart(fig, width="stretch")
+st.caption("Colour is on a log scale; zones below 1 trip per hour share the darkest colour. "
+           "Zone boundaries: NYC TLC taxi zone shapefile, converted by scripts/fetch_zone_shapes.py.")
+with st.expander("Trips by zone as a table"):
+    st.dataframe(zone_map.sort_values("avg_trips_per_hour", ascending=False)[
+        ["zone_id", "zone", "borough", "avg_trips_per_hour", "trips_total"]], width="stretch", hide_index=True)
 
 st.subheader("Top 15 pickup zones")
 top = analytics.top_zones(tables["zones"], 15).assign(label=lambda d: d["zone"] + " (" + d["borough"] + ")")

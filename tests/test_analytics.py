@@ -274,3 +274,10 @@ def test_largest_misses_are_sorted_by_absolute_error():
     assert top.loc[0, "hour"] == pd.Timestamp("2026-05-01 05:00") and top.loc[0, "zone_id"] == 1
     assert top.columns.tolist() == ["hour", "zone_id", "actual", "baseline", "xgb", "error"]
     assert len(analytics.largest_misses(backtest)) == 10
+
+
+def test_log_colour_scale_and_ticks():
+    assert analytics.log10_trips([0, 0.5, 1, 10, 250]).tolist() == pytest.approx([0, 0, 0, 1, np.log10(250)])
+    assert analytics.power_of_ten_ticks(706.4) == ([0, 1, 2, 3], ["1", "10", "100", "1,000"])
+    assert analytics.power_of_ten_ticks(42) == ([0, 1, 2], ["1", "10", "100"])
+    assert analytics.power_of_ten_ticks(0.3) == ([0, 1], ["1", "10"])

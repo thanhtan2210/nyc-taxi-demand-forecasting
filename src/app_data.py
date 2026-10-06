@@ -16,6 +16,7 @@ from src import analytics
 ROOT = Path(__file__).resolve().parent.parent
 MART_DIR = ROOT / "data" / "mart" / "demand_hourly"
 DIM_ZONE = ROOT / "data" / "mart" / "dim_zone.csv"
+ZONE_SHAPES = ROOT / "data" / "mart" / "taxi_zones.geojson"
 DATA_QUALITY = ROOT / "reports" / "data_quality.json"
 BACKTEST = ROOT / "reports" / "backtest_hourly.parquet"
 METRICS = ROOT / "models" / "metrics.json"
@@ -33,6 +34,9 @@ BLUE_RAMP = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95", "
 BASELINE_COLOR = "#eb6834"
 XGBOOST_COLOR = "#1baf7a"
 PLOT_MARGIN = dict(l=10, r=10, t=10, b=10)
+# Shared view of the zone maps: a dark basemap centred on New York City.
+MAP_VIEW = dict(map_style="carto-darkmatter", center={"lat": 40.70, "lon": -73.97}, zoom=9.5)
+MAP_NO_DATA_COLOR = "#898781"
 LEGEND_TOP = dict(orientation="h", y=1.12, x=0, title=None)
 
 
@@ -75,6 +79,12 @@ def load_mart():
 def load_zones():
     # keep_default_na=False: the lookup uses the literal text "N/A"
     return pd.read_csv(DIM_ZONE, keep_default_na=False)
+
+
+@st.cache_data
+def load_zone_shapes():
+    """Zone boundaries as GeoJSON (built once by scripts/fetch_zone_shapes.py)."""
+    return json.loads(ZONE_SHAPES.read_text(encoding="utf-8"))
 
 
 @st.cache_data
