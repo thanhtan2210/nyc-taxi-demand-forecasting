@@ -74,11 +74,20 @@ def log10_trips(avg_trips_per_hour):
     return np.log10(np.maximum(np.asarray(avg_trips_per_hour, dtype=float), 1.0))
 
 
-def power_of_ten_ticks(max_value):
-    """Colourbar ticks for a log10 scale: ([0, 1, 2, ...], ["1", "10", "100", ...]) up to max_value."""
-    top = max(1, int(np.ceil(np.log10(max(max_value, 1.0)))))
-    exponents = list(range(top + 1))
-    return exponents, [f"{10 ** e:,}" for e in exponents]
+def log_scale_ticks(max_value, min_gap=0.06):
+    """Colourbar of a log10 scale that ends exactly at the largest value.
+
+    Returns (upper, tick_values, tick_labels): `upper` is log10(max_value); the ticks are the
+    powers of ten below the maximum, labelled 1, 10, 100, ..., plus one tick at the maximum
+    labelled with its real value. A power of ten closer to the maximum than `min_gap` (in log10
+    units) is left out so the two labels do not overlap.
+    """
+    largest = max(float(max_value), 1.0)
+    upper = float(np.log10(largest))
+    exponents = [e for e in range(int(np.floor(upper)) + 1) if 10 ** e < largest and upper - e >= min_gap]
+    values = [float(e) for e in exponents] + [upper]
+    labels = [f"{10 ** e:,}" for e in exponents] + [f"{largest:,.0f}"]
+    return upper, values, labels
 
 
 def top_zones(zone_table, n=15):

@@ -98,10 +98,10 @@ with right:
 
 st.subheader("Average trips per hour by zone")
 zone_map = tables["zones"].assign(log_trips=lambda d: analytics.log10_trips(d["avg_trips_per_hour"]))
-ticks, tick_labels = analytics.power_of_ten_ticks(zone_map["avg_trips_per_hour"].max())
+upper, ticks, tick_labels = analytics.log_scale_ticks(zone_map["avg_trips_per_hour"].max())
 fig = px.choropleth_map(
     zone_map, geojson=load_zone_shapes(), locations="zone_id", featureidkey="properties.location_id",
-    color="log_trips", color_continuous_scale=BLUE_RAMP[::-1], range_color=(ticks[0], ticks[-1]),
+    color="log_trips", color_continuous_scale=BLUE_RAMP[::-1], range_color=(0, upper),
     custom_data=["zone", "borough", "avg_trips_per_hour", "trips_total"], opacity=0.85, **MAP_VIEW,
 )
 fig.update_traces(

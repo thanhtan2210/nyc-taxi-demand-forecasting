@@ -276,11 +276,26 @@ def test_largest_misses_are_sorted_by_absolute_error():
     assert len(analytics.largest_misses(backtest)) == 10
 
 
-def test_log_colour_scale_and_ticks():
+def test_log10_trips_floors_at_one_trip():
     assert analytics.log10_trips([0, 0.5, 1, 10, 250]).tolist() == pytest.approx([0, 0, 0, 1, np.log10(250)])
-    assert analytics.power_of_ten_ticks(706.4) == ([0, 1, 2, 3], ["1", "10", "100", "1,000"])
-    assert analytics.power_of_ten_ticks(42) == ([0, 1, 2], ["1", "10", "100"])
-    assert analytics.power_of_ten_ticks(0.3) == ([0, 1], ["1", "10"])
+
+
+def test_log_scale_ends_at_the_largest_value_not_at_the_next_power_of_ten():
+    upper, values, labels = analytics.log_scale_ticks(1712.4)
+    assert upper == pytest.approx(np.log10(1712.4))
+    assert values == pytest.approx([0, 1, 2, 3, np.log10(1712.4)])
+    assert labels == ["1", "10", "100", "1,000", "1,712"]
+
+    upper, values, labels = analytics.log_scale_ticks(706.4)
+    assert upper == pytest.approx(np.log10(706.4)) and upper < 3
+    assert labels == ["1", "10", "100", "706"]
+
+    # only powers of ten strictly below the maximum get a tick
+    assert analytics.log_scale_ticks(100)[2] == ["1", "10", "100"]
+    assert analytics.log_scale_ticks(100)[1] == pytest.approx([0, 1, 2])
+    # a power of ten that would sit on top of the maximum label is dropped
+    assert analytics.log_scale_ticks(1040)[2] == ["1", "10", "100", "1,040"]
+    assert analytics.log_scale_ticks(0.3) == (0.0, [0.0], ["1"])
 
 
 def test_hour_snapshot_returns_every_zone_of_that_hour_only():

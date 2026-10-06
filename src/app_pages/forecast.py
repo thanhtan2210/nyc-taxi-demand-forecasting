@@ -138,12 +138,12 @@ if map_view == "Forecast for one hour":
     snapshot = analytics.hour_snapshot(month_rows, moment)
     snapshot["zone"] = snapshot["zone_id"].map(zone_names["zone"])
     snapshot["borough"] = snapshot["zone_id"].map(zone_names["borough"])
-    # one colour scale for the whole month, so two hours can be compared by eye
-    ticks, tick_labels = analytics.power_of_ten_ticks(month_rows["xgb"].max())
+    # one colour scale for the whole month, ending at its largest forecast, so hours can be compared by eye
+    upper, ticks, tick_labels = analytics.log_scale_ticks(month_rows["xgb"].max())
     fig = go.Figure()
     fig.add_choroplethmap(
         geojson=shapes, featureidkey="properties.location_id", locations=snapshot["zone_id"],
-        z=analytics.log10_trips(snapshot["xgb"]), zmin=ticks[0], zmax=ticks[-1],
+        z=analytics.log10_trips(snapshot["xgb"]), zmin=0, zmax=upper,
         customdata=snapshot[["zone", "borough", "xgb", "actual", "baseline", "error"]],
         colorscale=BLUE_RAMP[::-1], marker=MAP_MARKER, name="XGBoost forecast",
         colorbar=dict(title="Forecast trips", tickvals=ticks, ticktext=tick_labels),

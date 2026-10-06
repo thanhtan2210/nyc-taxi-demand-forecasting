@@ -5,6 +5,7 @@ import json
 from datetime import date
 
 import numpy as np
+import pytest
 
 from streamlit.testing.v1 import AppTest
 
@@ -17,10 +18,13 @@ def open_app():
     return AppTest.from_file(str(ROOT / "app.py"), default_timeout=TIMEOUT).run()
 
 
+def chart_specs(at):
+    return [json.loads(chart.proto.spec) for chart in at.get("plotly_chart")]
+
+
 def map_traces(at):
     """The choropleth map traces among the Plotly charts of the page."""
-    specs = [json.loads(chart.proto.spec) for chart in at.get("plotly_chart")]
-    return [trace for spec in specs for trace in spec["data"] if trace["type"] == "choroplethmap"]
+    return [trace for spec in chart_specs(at) for trace in spec["data"] if trace["type"] == "choroplethmap"]
 
 
 def decoded(values):
@@ -48,6 +52,14 @@ def test_overview_page_renders():
     assert len(maps) == 1
     assert sorted(decoded(maps[0]["locations"])) == list(range(1, 264))
     assert any("Zone boundaries: NYC TLC taxi zone shapefile" in c.value for c in at.caption)
+    # the colour scale ends at the busiest zone, not at the next power of ten
+    spec = next(s for s in chart_specs(at) if any(tr["type"] == "choroplethmap" for tr in s["data"]))
+    axis = spec["layout"]["coloraxis"]
+    busiest = max(decoded(maps[0]["z"]))
+    assert axis["cmin"] == 0 and axis["cmax"] == pytest.approx(busiest)
+    assert decoded(axis["colorbar"]["tickvals"])[-1] == pytest.approx(busiest)
+    assert axis["colorbar"]["ticktext"][-1] == f"{10 ** busiest:,.0f}"
+    assert all(float(label.replace(",", "")) <= 10 ** busiest + 0.5 for label in axis["colorbar"]["ticktext"])
 
 
 def test_patterns_page_renders_and_reacts_to_selection():
@@ -115,6 +127,14 @@ def test_forecast_map_for_one_hour():
     assert "Forecast for one hour as a table" in [e.label for e in at.expander]
     evening_total = at.metric[0].value
     evening_colours = decoded(maps[0]["z"])
+    # the colour scale ends at the largest forecast of the month, labelled with its real value
+    bar = maps[0]["colorbar"]
+    assert maps[0]["zmin"] == 0 and maps[0]["zmax"] == pytest.approx(decoded(bar["tickvals"])[-1])
+    assert max(evening_colours) <= maps[0]["zmax"] + 1e-9
+    assert bar["ticktext"][:3] == ["1", "10", "100"]
+    assert bar["ticktext"][-1] == f"{10 ** maps[0]['zmax']:,.0f}"
+    assert all(float(label.replace(",", "")) <= 10 ** maps[0]["zmax"] + 0.5 for label in bar["ticktext"])
+    month_scale = maps[0]["zmax"]
 
     # another date and hour: the page still renders and shows different numbers
     at.date_input[0].set_value(date(2026, 5, 20)).run()
@@ -123,6 +143,7 @@ def test_forecast_map_for_one_hour():
     assert any("2026-05-20 04:00" in c.value for c in at.caption)
     assert at.metric[0].value != evening_total
     assert decoded(map_traces(at)[0]["z"]) != evening_colours
+    assert map_traces(at)[0]["zmax"] == month_scale  # same scale for every hour of the month
 
     # another month: the date goes back to the first day of that month
     at.selectbox[0].select("2026-06").run()
