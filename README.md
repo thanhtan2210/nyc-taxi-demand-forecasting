@@ -3,8 +3,7 @@
 In the next hour, how many passenger rides will start in each neighbourhood of New York City?
 
 ## Live demo
-
-TODO: link
+[link demo nyc-taxi-demand-forecasting](https://nyc-taxi-demand-forecasting-t.streamlit.app/)
 
 ![Overview page of the Streamlit app](docs/images/overview.png)
 
