@@ -1,0 +1,236 @@
+{
+  "generated_by": "python -m src.train",
+  "target": "trips_total: pickups per zone and hour, summed over yellow, green, fhv and fhvhv",
+  "notes": [
+    "MAE and WAPE are the headline metrics. R2 is not reported: zones differ so much in volume that it is high for any model.",
+    "WAPE = sum(|error|) / sum(actual) over all zone-hours of the period.",
+    "Baseline = demand of the same zone at the same hour one week earlier (lag 168).",
+    "Predictions are clipped at 0.",
+    "Validation metrics come from the model fitted on train only; they were used for model selection and early stopping, so they are optimistic.",
+    "Test metrics come from the model refitted on train + validation; each test month was predicted once.",
+    "Weather is the observed value of the forecast hour, i.e. a perfect weather forecast is assumed. Real forecasts would be less accurate.",
+    "Bootstrap: paired block bootstrap over days (both models scored on the same resampled days)."
+  ],
+  "split": {
+    "train": {
+      "start": "2025-06-08 00:00",
+      "end": "2026-03-31 23:00"
+    },
+    "validation": {
+      "start": "2026-04-01 00:00",
+      "end": "2026-04-30 23:00"
+    },
+    "test_months": [
+      "2026-05",
+      "2026-06",
+      "2026-07"
+    ]
+  },
+  "rows": {
+    "train": 1874664,
+    "validation": 189360,
+    "test_2026-05": 195672,
+    "test_2026-06": 189360,
+    "test_2026-07": 195672
+  },
+  "search": {
+    "learning_rate": 0.1,
+    "max_rounds": 600,
+    "early_stopping_rounds": 30,
+    "candidates": [
+      {
+        "name": "depth6",
+        "params": {
+          "max_depth": 6
+        },
+        "best_iteration": 599,
+        "hit_round_limit": true,
+        "validation_mae": 13.031504947996662
+      },
+      {
+        "name": "depth8",
+        "params": {
+          "max_depth": 8
+        },
+        "best_iteration": 596,
+        "hit_round_limit": false,
+        "validation_mae": 12.652186840889192
+      },
+      {
+        "name": "depth10",
+        "params": {
+          "max_depth": 10
+        },
+        "best_iteration": 368,
+        "hit_round_limit": false,
+        "validation_mae": 12.652973533822623
+      },
+      {
+        "name": "depth8_subsample",
+        "params": {
+          "max_depth": 8,
+          "subsample": 0.8,
+          "colsample_bytree": 0.8
+        },
+        "best_iteration": 598,
+        "hit_round_limit": false,
+        "validation_mae": 12.858662746764264
+      },
+      {
+        "name": "depth8_min_child20",
+        "params": {
+          "max_depth": 8,
+          "min_child_weight": 20
+        },
+        "best_iteration": 599,
+        "hit_round_limit": true,
+        "validation_mae": 12.69606318152411
+      },
+      {
+        "name": "depth8_poisson",
+        "params": {
+          "max_depth": 8,
+          "objective": "count:poisson"
+        },
+        "best_iteration": 599,
+        "hit_round_limit": true,
+        "validation_mae": 12.78570432963874
+      }
+    ],
+    "selected": "depth8"
+  },
+  "weather": {
+    "validation_mae_with_weather": 12.652186840889192,
+    "validation_mae_without_weather": 12.517497615444933,
+    "kept": false
+  },
+  "final_model": {
+    "params": {
+      "max_depth": 8
+    },
+    "n_trees": 599,
+    "features": [
+      "zone_id",
+      "hour_of_day",
+      "day_of_week",
+      "is_holiday",
+      "lag_1",
+      "lag_2",
+      "lag_3",
+      "lag_24",
+      "lag_168",
+      "roll_mean_24"
+    ],
+    "file": "models/xgb_demand.joblib",
+    "size_mb": 7.39
+  },
+  "periods": {
+    "validation": {
+      "n_rows": 189360,
+      "n_zones": 263,
+      "mean_actual": 133.10487365722656,
+      "baseline": {
+        "mae": 19.068525559780312,
+        "rmse": 38.056875476294245,
+        "wape": 0.14325939711104352
+      },
+      "xgboost": {
+        "mae": 12.517497615444933,
+        "rmse": 24.151400500266522,
+        "wape": 0.09404236085824697
+      },
+      "mae_improvement_pct": 34.355188731282546,
+      "bootstrap": {
+        "mae_diff_xgb_minus_baseline": -6.551027144064216,
+        "ci95_low": -7.514815166877905,
+        "ci95_high": -5.620013136354035,
+        "n_bootstrap": 1000,
+        "block": "day",
+        "n_days": 30
+      },
+      "leakage_check_required": true
+    },
+    "test_2026-05": {
+      "n_rows": 195672,
+      "n_zones": 263,
+      "mean_actual": 135.96664428710938,
+      "baseline": {
+        "mae": 21.942183858702318,
+        "rmse": 46.191622807835245,
+        "wape": 0.16137916880991504
+      },
+      "xgboost": {
+        "mae": 13.002373162368162,
+        "rmse": 25.326631525229107,
+        "wape": 0.09562914006242479
+      },
+      "mae_improvement_pct": 40.742574913702626,
+      "bootstrap": {
+        "mae_diff_xgb_minus_baseline": -8.939811265791732,
+        "ci95_low": -11.192099054795781,
+        "ci95_high": -6.890380266466332,
+        "n_bootstrap": 1000,
+        "block": "day",
+        "n_days": 31
+      },
+      "leakage_check_required": true
+    },
+    "test_2026-06": {
+      "n_rows": 189360,
+      "n_zones": 263,
+      "mean_actual": 131.0631103515625,
+      "baseline": {
+        "mae": 22.484051542036333,
+        "rmse": 47.835949703885525,
+        "wape": 0.1715513320091122
+      },
+      "xgboost": {
+        "mae": 13.543106205632428,
+        "rmse": 27.621255516501954,
+        "wape": 0.10333270695334373
+      },
+      "mae_improvement_pct": 39.765721581307766,
+      "bootstrap": {
+        "mae_diff_xgb_minus_baseline": -8.940945157372202,
+        "ci95_low": -10.909008089749683,
+        "ci95_high": -7.353095509215252,
+        "n_bootstrap": 1000,
+        "block": "day",
+        "n_days": 30
+      },
+      "leakage_check_required": false
+    },
+    "test_2026-07": {
+      "n_rows": 195672,
+      "n_zones": 263,
+      "mean_actual": 127.28695678710938,
+      "baseline": {
+        "mae": 22.43605625741036,
+        "rmse": 48.85636537474232,
+        "wape": 0.17626358812284057
+      },
+      "xgboost": {
+        "mae": 13.254649433286698,
+        "rmse": 26.749132936430154,
+        "wape": 0.10413202933781346
+      },
+      "mae_improvement_pct": 40.92255215794065,
+      "bootstrap": {
+        "mae_diff_xgb_minus_baseline": -9.181406895212396,
+        "ci95_low": -11.234372253056135,
+        "ci95_high": -7.314020657017866,
+        "n_bootstrap": 1000,
+        "block": "day",
+        "n_days": 31
+      },
+      "leakage_check_required": false
+    }
+  },
+  "environment": {
+    "processor": "Intel64 Family 6 Model 158 Stepping 10, GenuineIntel",
+    "logical_cpus": 8,
+    "n_jobs": 4,
+    "python": "3.13.15",
+    "xgboost": "3.4.1"
+  }
+}

@@ -1,0 +1,577 @@
+{
+  "generated_by": "python -m src.warehouse",
+  "notes": [
+    "rows_read = rows_outside_month + rows_zone_null + rows_zone_264_265 + rows_zone_out_of_range + rows_in_mart.",
+    "rows_outside_month: pickup timestamp missing or not inside [first day of month, first day of next month).",
+    "The zone columns count in-month rows only. Zones 264 (Unknown) and 265 (Outside of NYC) are kept in the fact table but excluded from the mart."
+  ],
+  "environment": {
+    "processor": "Intel64 Family 6 Model 158 Stepping 10, GenuineIntel",
+    "logical_cpus": 8,
+    "duckdb": "1.5.6",
+    "duckdb_threads": 4,
+    "duckdb_memory_limit": "4GB"
+  },
+  "entries": [
+    {
+      "service": "yellow",
+      "month": "2025-06",
+      "rows_read": 4322960,
+      "rows_outside_month": 20,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 8595,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 4314345
+    },
+    {
+      "service": "green",
+      "month": "2025-06",
+      "rows_read": 49390,
+      "rows_outside_month": 16,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 159,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 49215
+    },
+    {
+      "service": "fhv",
+      "month": "2025-06",
+      "rows_read": 2231731,
+      "rows_outside_month": 0,
+      "rows_zone_null": 1797154,
+      "rows_zone_264_265": 2619,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 431958
+    },
+    {
+      "service": "fhvhv",
+      "month": "2025-06",
+      "rows_read": 19868009,
+      "rows_outside_month": 0,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 913,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 19867096
+    },
+    {
+      "service": "yellow",
+      "month": "2025-07",
+      "rows_read": 3898963,
+      "rows_outside_month": 7,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 8366,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 3890590
+    },
+    {
+      "service": "green",
+      "month": "2025-07",
+      "rows_read": 48205,
+      "rows_outside_month": 13,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 160,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 48032
+    },
+    {
+      "service": "fhv",
+      "month": "2025-07",
+      "rows_read": 2187536,
+      "rows_outside_month": 0,
+      "rows_zone_null": 1801077,
+      "rows_zone_264_265": 2119,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 384340
+    },
+    {
+      "service": "fhvhv",
+      "month": "2025-07",
+      "rows_read": 19653012,
+      "rows_outside_month": 0,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 933,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 19652079
+    },
+    {
+      "service": "yellow",
+      "month": "2025-08",
+      "rows_read": 3574091,
+      "rows_outside_month": 17,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 7607,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 3566467
+    },
+    {
+      "service": "green",
+      "month": "2025-08",
+      "rows_read": 46306,
+      "rows_outside_month": 23,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 194,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 46089
+    },
+    {
+      "service": "fhv",
+      "month": "2025-08",
+      "rows_read": 2256854,
+      "rows_outside_month": 0,
+      "rows_zone_null": 1897108,
+      "rows_zone_264_265": 4077,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 355669
+    },
+    {
+      "service": "fhvhv",
+      "month": "2025-08",
+      "rows_read": 19271461,
+      "rows_outside_month": 0,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 878,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 19270583
+    },
+    {
+      "service": "yellow",
+      "month": "2025-09",
+      "rows_read": 4251015,
+      "rows_outside_month": 7,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 8215,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 4242793
+    },
+    {
+      "service": "green",
+      "month": "2025-09",
+      "rows_read": 48893,
+      "rows_outside_month": 33,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 146,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 48714
+    },
+    {
+      "service": "fhv",
+      "month": "2025-09",
+      "rows_read": 2149292,
+      "rows_outside_month": 0,
+      "rows_zone_null": 1743514,
+      "rows_zone_264_265": 4363,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 401415
+    },
+    {
+      "service": "fhvhv",
+      "month": "2025-09",
+      "rows_read": 19434641,
+      "rows_outside_month": 0,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 822,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 19433819
+    },
+    {
+      "service": "yellow",
+      "month": "2025-10",
+      "rows_read": 4428699,
+      "rows_outside_month": 13,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 8542,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 4420144
+    },
+    {
+      "service": "green",
+      "month": "2025-10",
+      "rows_read": 49416,
+      "rows_outside_month": 21,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 174,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 49221
+    },
+    {
+      "service": "fhv",
+      "month": "2025-10",
+      "rows_read": 2446615,
+      "rows_outside_month": 0,
+      "rows_zone_null": 2029441,
+      "rows_zone_264_265": 2151,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 415023
+    },
+    {
+      "service": "fhvhv",
+      "month": "2025-10",
+      "rows_read": 21308701,
+      "rows_outside_month": 0,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 833,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 21307868
+    },
+    {
+      "service": "yellow",
+      "month": "2025-11",
+      "rows_read": 4181444,
+      "rows_outside_month": 24,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 8035,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 4173385
+    },
+    {
+      "service": "green",
+      "month": "2025-11",
+      "rows_read": 46912,
+      "rows_outside_month": 21,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 116,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 46775
+    },
+    {
+      "service": "fhv",
+      "month": "2025-11",
+      "rows_read": 2278604,
+      "rows_outside_month": 0,
+      "rows_zone_null": 1895087,
+      "rows_zone_264_265": 2371,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 381146
+    },
+    {
+      "service": "fhvhv",
+      "month": "2025-11",
+      "rows_read": 20818240,
+      "rows_outside_month": 0,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 961,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 20817279
+    },
+    {
+      "service": "yellow",
+      "month": "2025-12",
+      "rows_read": 4305006,
+      "rows_outside_month": 9,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 7614,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 4297383
+    },
+    {
+      "service": "green",
+      "month": "2025-12",
+      "rows_read": 48236,
+      "rows_outside_month": 26,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 131,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 48079
+    },
+    {
+      "service": "fhv",
+      "month": "2025-12",
+      "rows_read": 1926891,
+      "rows_outside_month": 0,
+      "rows_zone_null": 1559296,
+      "rows_zone_264_265": 2244,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 365351
+    },
+    {
+      "service": "fhvhv",
+      "month": "2025-12",
+      "rows_read": 22108438,
+      "rows_outside_month": 0,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 1063,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 22107375
+    },
+    {
+      "service": "yellow",
+      "month": "2026-01",
+      "rows_read": 3724889,
+      "rows_outside_month": 7,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 5930,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 3718952
+    },
+    {
+      "service": "green",
+      "month": "2026-01",
+      "rows_read": 40272,
+      "rows_outside_month": 22,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 130,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 40120
+    },
+    {
+      "service": "fhv",
+      "month": "2026-01",
+      "rows_read": 1941722,
+      "rows_outside_month": 0,
+      "rows_zone_null": 1646462,
+      "rows_zone_264_265": 855,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 294405
+    },
+    {
+      "service": "fhvhv",
+      "month": "2026-01",
+      "rows_read": 20940373,
+      "rows_outside_month": 0,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 1030,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 20939343
+    },
+    {
+      "service": "yellow",
+      "month": "2026-02",
+      "rows_read": 3399866,
+      "rows_outside_month": 16,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 5021,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 3394829
+    },
+    {
+      "service": "green",
+      "month": "2026-02",
+      "rows_read": 37373,
+      "rows_outside_month": 11,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 124,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 37238
+    },
+    {
+      "service": "fhv",
+      "month": "2026-02",
+      "rows_read": 1948529,
+      "rows_outside_month": 0,
+      "rows_zone_null": 1793034,
+      "rows_zone_264_265": 1688,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 153807
+    },
+    {
+      "service": "fhvhv",
+      "month": "2026-02",
+      "rows_read": 19875686,
+      "rows_outside_month": 0,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 1000,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 19874686
+    },
+    {
+      "service": "yellow",
+      "month": "2026-03",
+      "rows_read": 3952451,
+      "rows_outside_month": 19,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 6249,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 3946183
+    },
+    {
+      "service": "green",
+      "month": "2026-03",
+      "rows_read": 44208,
+      "rows_outside_month": 9,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 139,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 44060
+    },
+    {
+      "service": "fhv",
+      "month": "2026-03",
+      "rows_read": 2360690,
+      "rows_outside_month": 0,
+      "rows_zone_null": 2021238,
+      "rows_zone_264_265": 1927,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 337525
+    },
+    {
+      "service": "fhvhv",
+      "month": "2026-03",
+      "rows_read": 22058358,
+      "rows_outside_month": 0,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 1091,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 22057267
+    },
+    {
+      "service": "yellow",
+      "month": "2026-04",
+      "rows_read": 3831240,
+      "rows_outside_month": 12,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 6032,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 3825196
+    },
+    {
+      "service": "green",
+      "month": "2026-04",
+      "rows_read": 44238,
+      "rows_outside_month": 3,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 139,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 44096
+    },
+    {
+      "service": "fhv",
+      "month": "2026-04",
+      "rows_read": 2125630,
+      "rows_outside_month": 0,
+      "rows_zone_null": 1783421,
+      "rows_zone_264_265": 1693,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 340516
+    },
+    {
+      "service": "fhvhv",
+      "month": "2026-04",
+      "rows_read": 20995953,
+      "rows_outside_month": 0,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 1020,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 20994933
+    },
+    {
+      "service": "yellow",
+      "month": "2026-05",
+      "rows_read": 4090836,
+      "rows_outside_month": 14,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 6485,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 4084337
+    },
+    {
+      "service": "green",
+      "month": "2026-05",
+      "rows_read": 44921,
+      "rows_outside_month": 10,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 164,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 44747
+    },
+    {
+      "service": "fhv",
+      "month": "2026-05",
+      "rows_read": 2421419,
+      "rows_outside_month": 0,
+      "rows_zone_null": 2068483,
+      "rows_zone_264_265": 1717,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 351219
+    },
+    {
+      "service": "fhvhv",
+      "month": "2026-05",
+      "rows_read": 22125744,
+      "rows_outside_month": 0,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 1182,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 22124562
+    },
+    {
+      "service": "yellow",
+      "month": "2026-06",
+      "rows_read": 3837248,
+      "rows_outside_month": 17,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 6569,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 3830662
+    },
+    {
+      "service": "green",
+      "month": "2026-06",
+      "rows_read": 44163,
+      "rows_outside_month": 13,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 151,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 43999
+    },
+    {
+      "service": "fhv",
+      "month": "2026-06",
+      "rows_read": 1892696,
+      "rows_outside_month": 0,
+      "rows_zone_null": 1722118,
+      "rows_zone_264_265": 1755,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 168823
+    },
+    {
+      "service": "fhvhv",
+      "month": "2026-06",
+      "rows_read": 20775868,
+      "rows_outside_month": 0,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 1241,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 20774627
+    },
+    {
+      "service": "yellow",
+      "month": "2026-07",
+      "rows_read": 3530109,
+      "rows_outside_month": 46,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 6200,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 3523863
+    },
+    {
+      "service": "green",
+      "month": "2026-07",
+      "rows_read": 41252,
+      "rows_outside_month": 16,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 153,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 41083
+    },
+    {
+      "service": "fhv",
+      "month": "2026-07",
+      "rows_read": 2138604,
+      "rows_outside_month": 0,
+      "rows_zone_null": 1715254,
+      "rows_zone_264_265": 1806,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 421544
+    },
+    {
+      "service": "fhvhv",
+      "month": "2026-07",
+      "rows_read": 20921249,
+      "rows_outside_month": 0,
+      "rows_zone_null": 0,
+      "rows_zone_264_265": 1245,
+      "rows_zone_out_of_range": 0,
+      "rows_in_mart": 20920004
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+# Single source of truth for the data pipeline and the evaluation protocol.
+
+# Public NYC TLC trip records: {source_base_url}/{service}_tripdata_{YYYY-MM}.parquet
+source_base_url: https://d37ci6vzurychx.cloudfront.net/trip-data
+zone_lookup_url: https://d37ci6vzurychx.cloudfront.net/misc/taxi_zone_lookup.csv
+
+# Pickup timestamp and pickup zone column of each service (fhv spells PUlocationID with a lowercase l).
+services:
+  yellow:
+    pickup_column: tpep_pickup_datetime
+    zone_column: PULocationID
+  green:
+    pickup_column: lpep_pickup_datetime
+    zone_column: PULocationID
+  fhv:
+    pickup_column: pickup_datetime
+    zone_column: PUlocationID
+  fhvhv:
+    pickup_column: pickup_datetime
+    zone_column: PULocationID
+
+months:
+  start: "2025-06"
+  end: "2026-07"
+
+# Chronological split. Bounds are inclusive hours.
+split:
+  # The first week is skipped because the 168-hour lag has no history yet.
+  train:
+    start: "2025-06-08 00:00"
+    end: "2026-03-31 23:00"
+  validation:
+    start: "2026-04-01 00:00"
+    end: "2026-04-30 23:00"
+  # Reported separately; June and July 2026 overlap the FIFA World Cup.
+  test_months: ["2026-05", "2026-06", "2026-07"]
+
+# Open-Meteo archive point used for the hourly weather (New York City).
+weather:
+  latitude: 40.7128
+  longitude: -74.0060
+
+random_state: 42
+# Threads used by DuckDB and XGBoost.
+n_jobs: 4
+duckdb_memory_limit: 4GB

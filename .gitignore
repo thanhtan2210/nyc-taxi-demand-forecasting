@@ -1,6 +1,14 @@
-dataset/Trip_Record/
-dataset/processed/
+# Raw trip records are never stored in the repo; only the hourly mart is committed
 *.parquet
+!data/mart/**/*.parquet
+!reports/*.parquet
+
+# Local DuckDB warehouse (rebuilt by `python -m src.warehouse`)
+warehouse/
+
+# Wall-clock timings: they change on every run
+reports/train_timings.json
+reports/warehouse_timings.json
 
 # Environments
 .env
@@ -12,21 +20,8 @@ env/
 __pycache__/
 *.py[cod]
 *$py.class
-
-# Jupyter Notebook
-.ipynb_checkpoints
-*/.ipynb_checkpoints/*
-
-# Models
-saved_models/
+.pytest_cache/
 
 # OS generated files
 desktop.ini
 .DS_Store
-
-# Reports
-etl_report_summary.csv
-etl_report_*.csv
-__pycache__/
-report/
-weather_forecast/

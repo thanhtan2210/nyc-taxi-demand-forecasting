@@ -1,0 +1,21 @@
+"""Loads config/pipeline.yaml and expands month ranges."""
+import pandas as pd
+import yaml
+
+from . import paths
+
+
+def load_config(path=paths.CONFIG):
+    with open(path, encoding="utf-8") as fh:
+        return yaml.safe_load(fh)
+
+
+def month_range(start, end):
+    """Returns every month from start to end inclusive as 'YYYY-MM' strings."""
+    return [p.strftime("%Y-%m") for p in pd.period_range(start, end, freq="M")]
+
+
+def parse_months(spec):
+    """Parses a CLI month spec: 'YYYY-MM' or 'YYYY-MM:YYYY-MM'."""
+    start, _, end = spec.partition(":")
+    return month_range(start, end or start)
